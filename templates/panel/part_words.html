@@ -1,0 +1,49 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Key vocabulary · Part {{ part.number }}{% endblock %}
+{% block page_title %}{{ course.get_category_display }} · Part {{ part.number }} · Key vocabulary{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:part_edit' part.pk %}" class="back-link">← Part {{ part.number }} · {{ part.name }}</a>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    <div class="form-main">
+        <section class="panel-card" data-formset data-prefix="words" data-enter-next>
+            <header class="card-head">
+                <h2>Key vocabulary <small class="muted-sm">· {{ part.icon }} Part {{ part.number }} · {{ part.name }}{% if word_total %} · {{ word_total }} ta so'z{% endif %}</small></h2>
+            </header>
+            <p class="muted-sm" style="margin-top:-6px;">
+                O'quvchi Part kartasidagi «Key vocabulary» tugmasini bosganda shu so'zlar chiqadi. Har bir so'z uchun
+                so'z va uning o'zbekcha ma'nosi shart; talaffuz va misol ixtiyoriy. Yana so'z qo'shish uchun
+                «+ So'z qo'shish» tugmasini bosing yoki oxirgi maydonda Enter bosing (Enter maydonlar bo'ylab o'tkazadi,
+                formani yubormaydi). × so'zni olib tashlaydi, u «Saqlash» bosilganda o'chadi.
+            </p>
+            {{ words.management_form }}
+            {% if words.non_form_errors %}<div class="form-errors">{{ words.non_form_errors }}</div>{% endif %}
+            <div class="kw-cols" aria-hidden="true">
+                <span></span><span>So'z</span><span>Talaffuz</span><span>Ma'no</span><span>Misol</span><span></span>
+            </div>
+            <div data-rows class="kw-rows">
+                {% for f in words.forms %}{% include "panel/_word_row.html" %}{% endfor %}
+            </div>
+            <template data-empty>{% include "panel/_word_row.html" with f=words.empty_form %}</template>
+            <button type="button" class="btn btn-ghost btn-sm" data-add>+ So'z qo'shish</button>
+        </section>
+
+        <section class="panel-card">
+            <details class="kw-bulk"{% if bulk.errors %} open{% endif %}>
+                <summary>📋 Ko'p so'zni bir vaqtda qo'shish</summary>
+                <p class="muted-sm">Tayyor ro'yxatingiz bo'lsa, uni shu yerga ko'chirib qo'ying.</p>
+                {% include "panel/_field.html" with field=bulk.bulk %}
+            </details>
+        </section>
+
+        <div class="kw-savebar">
+            <button type="submit" class="btn btn-primary">Saqlash</button>
+            <a href="{{ student_url }}" target="_blank" rel="noopener" class="btn btn-ghost">O'quvchi ko'rinishi ↗</a>
+            <a href="{% url 'panel:part_edit' part.pk %}" class="btn btn-ghost kw-back">Orqaga</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

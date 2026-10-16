@@ -127,6 +127,8 @@
 .card-head h2 { margin: 0; font-size: 17px; }
 .card-head a { color: var(--green-dark); font-weight: 600; font-size: 14px; }
 .card-head a:hover { text-decoration: underline; }
+.card-head a.btn-primary { color: #fff; }
+.card-head a.btn:hover { text-decoration: none; }
 .page-note { margin: 0 0 18px; color: var(--text-muted); font-size: 14px; max-width: 760px; }
 .muted-sm { color: var(--text-muted); font-size: 13px; }
 .empty-note { margin: 6px 0; color: var(--text-muted); font-size: 14px; }
@@ -457,6 +459,40 @@ a.stat-card:hover { border-color: var(--green); box-shadow: 0 4px 14px rgba(26, 
 .gap-answer-field { grid-column: 1 / -1; }
 .match-row-body { grid-template-columns: minmax(0, 1fr); }
 
+/* ---------- Key vocabulary editor (one row per word) ---------- */
+.kw-cols, .kw-row {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 2fr) 40px;
+    gap: 8px;
+    align-items: center;
+}
+.kw-cols { margin-bottom: 6px; font-size: 12px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--green-dark); }
+.kw-rows { counter-reset: kw; margin-bottom: 12px; }
+.kw-row { counter-increment: kw; margin-bottom: 8px; }
+.kw-row[hidden] { display: none; }
+.kw-num { text-align: right; font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.kw-num::before { content: counter(kw); }
+.kw-row .row-delete { display: none; }
+.kw-errors { grid-column: 2 / -1; margin: 0; }
+.panel-content .kw-row input { padding: 9px 11px; font-size: 14.5px; }
+.kw-bulk summary { cursor: pointer; font-weight: 700; font-size: 15px; }
+.kw-bulk[open] summary { margin-bottom: 8px; }
+.kw-savebar {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    box-shadow: 0 -6px 18px rgba(16, 24, 40, .08);
+}
+.kw-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; }
+.kw-chips li { padding: 4px 12px; background: var(--green-bg); border-radius: 8px; color: var(--green-dark); font-size: 13.5px; font-weight: 600; }
+.kw-chips .kw-more { background: transparent; color: var(--text-muted); font-weight: 500; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1000px) {
     .dash-grid, .detail-grid, .form-layout { grid-template-columns: minmax(0, 1fr); }
@@ -486,4 +522,25 @@ a.stat-card:hover { border-color: var(--green); box-shadow: 0 4px 14px rgba(26, 
     .panel-content { padding: 20px 16px 40px; }
     .form-grid-2 { grid-template-columns: 1fr; }
     .q-row-body, .gap-row-body, .match-row-body { grid-template-columns: minmax(0, 1fr); }
+    /* a word becomes a small card: word and transcription on the first line, then the meaning and the example */
+    .kw-cols, .kw-num { display: none; }
+    .kw-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+        grid-template-areas: "word ipa del" "meaning meaning meaning" "example example example" "errors errors errors";
+        padding: 10px;
+        background: #fafdfb;
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
+    }
+    .kw-word { grid-area: word; }
+    .kw-ipa { grid-area: ipa; }
+    .kw-meaning { grid-area: meaning; }
+    .kw-example { grid-area: example; }
+    .kw-del { grid-area: del; }
+    .kw-errors { grid-area: errors; }
+}
+@media (max-width: 520px) {
+    /* the save bar stays one line high on a phone: the back link at the top does what "Orqaga" does */
+    .kw-savebar { padding: 10px 12px; gap: 8px; }
+    .kw-savebar .kw-back { display: none; }
 }

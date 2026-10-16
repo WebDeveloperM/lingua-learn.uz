@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import SpeakingPractice, SpeakingQuestion, SpeakingSet
+from .models import SpeakingAnswer, SpeakingAttempt, SpeakingPractice, SpeakingQuestion, SpeakingSet
 
 
 class SpeakingQuestionInline(admin.TabularInline):
@@ -18,3 +18,15 @@ class SpeakingSetAdmin(admin.ModelAdmin):
 @admin.register(SpeakingPractice)
 class SpeakingPracticeAdmin(admin.ModelAdmin):
     list_display = ('user', 'set', 'practised_at')
+
+
+class SpeakingAnswerInline(admin.TabularInline):
+    model = SpeakingAnswer
+    extra = 0
+
+
+@admin.register(SpeakingAttempt)
+class SpeakingAttemptAdmin(admin.ModelAdmin):
+    list_display = ('user', 'set', 'created_at', 'coins', 'feedback_status')
+    list_filter = ('feedback_status', 'set__part')
+    inlines = [SpeakingAnswerInline]

@@ -1,7 +1,8 @@
+import json
 import re
 
 from django.db import IntegrityError, connection, transaction
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
@@ -349,11 +350,74 @@ class ReadyPageTests(TestCase):
         self.assertContains(response, '<input type="checkbox" id="read-aloud" checked> <span>Read the questions aloud</span>')
         self.assertContains(response, '/static/js/speaking.js')
 
-    def test_the_session_itself_is_not_there_yet(self):
+    def session_config(self, response):
+        match = re.search(r'<script id="sp-config" type="application/json">(.*?)</script>', response.content.decode(), re.S)
+        self.assertIsNotNone(match, 'the page has no practice settings')
+        return json.loads(match.group(1))
+
+    def test_part_one_one_can_be_started(self):
         self.client.force_login(self.student)
         response = self.client.get(self.url)
-        self.assertRegex(response.content.decode(), r'<button type="button" class="btn btn-primary btn-lg start-btn" id="start-btn" disabled>')
-        self.assertContains(response, 'The speaking session itself is coming soon.')
+        html = response.content.decode()
+        self.assertRegex(html, r'<button type="button" class="btn btn-primary btn-lg start-btn" id="start-btn"><span aria-hidden="true">▶</span> Start</button>')
+        self.assertNotRegex(html, r'id="start-btn"[^>]*disabled')
+        self.assertContains(response, '/static/js/speaking-session.js')
+        self.assertContains(response, 'id="sp-run" hidden')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertNotContains(response, 'is coming soon')
+
+    def test_the_page_can_talk_about_the_microphone(self):
+        self.client.force_login(self.student)
+        response = self.client.get(self.url)
+        self.assertContains(response, '<p class="sp-mic-note" id="start-note" role="status" aria-live="polite" hidden></p>')
+        self.assertContains(response, '<div class="sp-mic-help" id="mic-help" hidden>')
+        self.assertContains(response, '<strong>The microphone is blocked.</strong>')
+        self.assertContains(response, 'Set <strong>Microphone</strong> to <strong>Allow</strong>.')
+        self.assertContains(response, 'Reload this page (F5) and press <strong>Start</strong>.')
+        self.assertContains(response, 'id="mic-recheck">I allowed it — check again</button>')
+
+    @override_settings(GROQ_API_KEY='')
+    def test_when_only_the_browser_turns_speech_into_text_the_page_says_which_browsers_do(self):
+        self.client.force_login(self.student)
+        self.assertContains(
+            self.client.get(self.url),
+            '<p class="sp-support" id="sp-support" hidden>Tip: open this page in Google Chrome or Microsoft Edge.')
+
+    @override_settings(GROQ_API_KEY='gsk_test')
+    def test_when_the_server_turns_the_recordings_into_text_any_browser_will_do(self):
+        self.client.force_login(self.student)
+        response = self.client.get(self.url)
+        self.assertNotContains(response, 'sp-support')
+        self.assertNotContains(response, 'Google Chrome')
+
+    def test_the_page_carries_what_the_practice_needs(self):
+        self.client.force_login(self.student)
+        config = self.session_config(self.client.get(self.url))
+        self.assertEqual(config, {
+            'part': 'Part 1.1', 'think': 5, 'talk': 30,
+            'questions': [{'id': question.pk, 'text': question.text} for question in self.set_two.questions.all()],
+            'finishUrl': reverse('speaking:finish', args=[self.course.slug, 1, self.set_two.pk]),
+            'backUrl': reverse('speaking:part', args=[self.course.slug, 1]),
+        })
+
+    def test_question_text_cannot_break_out_of_the_settings(self):
+        SpeakingQuestion.objects.filter(set=self.set_two, order=0).update(text='</script><b>Hi</b> & "you"')
+        self.client.force_login(self.student)
+        response = self.client.get(self.url)
+        self.assertNotContains(response, '</script><b>')
+        self.assertEqual(self.session_config(response)['questions'][0]['text'], '</script><b>Hi</b> & "you"')
+
+    def test_the_other_parts_cannot_be_started_yet(self):
+        for part in (P12, P2, SpeakingPart.PART_3):
+            speaking_set = make_set(self.course, part=part)
+            self.client.force_login(self.student)
+            response = self.client.get(reverse('speaking:ready', args=[self.course.slug, part.value, speaking_set.pk]))
+            self.assertRegex(response.content.decode(), r'id="start-btn" disabled>')
+            self.assertContains(response, f'The practice for {part.label} is coming soon.')
+            self.assertNotContains(response, 'sp-config')
+            self.assertNotContains(response, 'speaking-session.js')
+            self.assertNotContains(response, 'id="sp-run"')
+            self.assertNotContains(response, 'mic-help')
 
     def test_the_numbers_follow_the_set(self):
         one = make_set(self.course, questions=['Only one question?'])
@@ -395,3 +459,74 @@ class ReadyPageTests(TestCase):
         admin = User.objects.create_user(email='a@t.uz', password=PASSWORD, role=Role.ADMIN)
         self.client.force_login(admin)
         self.assertEqual(self.client.get(self.url).status_code, 200)
+
+
+@override_settings(HTTPS_PORT='8443', SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO', 'https'))
+class SecureAddressTests(TestCase):
+    """The microphone needs https (or localhost): a visitor of the plain-http address is pointed to the https one."""
+
+    def setUp(self):
+        self.course = make_speaking_course()
+        self.set = make_set(self.course)
+        self.student = User.objects.create_user(email='s@t.uz', password=PASSWORD)
+        self.client.force_login(self.student)
+        self.path = reverse('speaking:ready', args=[self.course.slug, 1, self.set.pk])
+
+    def page(self, host, path=None, **extra):
+        return self.client.get(path or self.path, HTTP_HOST=host, **extra)
+
+    def secure_href(self, response):
+        match = re.search(r'<a class="pill-btn is-primary" id="secure-link" href="([^"]*)">', response.content.decode())
+        return match.group(1) if match else None
+
+    def test_a_visitor_of_the_lan_address_gets_the_https_address_of_the_same_page(self):
+        response = self.page('192.168.2.72:8000')
+        self.assertEqual(self.secure_href(response), f'https://192.168.2.72:8443{self.path}')
+        self.assertContains(response, 'id="secure-note" role="alert" hidden>')
+        self.assertContains(response, 'This page was opened over plain http, so the browser will not give it the microphone.')
+        self.assertContains(response, 'Open the secure page →</a>')
+        self.assertContains(response, '<em>Advanced</em>, then <em>Continue</em>')
+
+    def test_the_note_stays_hidden_until_the_page_finds_the_microphone_missing(self):
+        response = self.page('192.168.2.72:8000')
+        self.assertRegex(response.content.decode(), r'<div class="[^"]*" id="secure-note"[^>]*\bhidden>')
+        self.assertContains(response, 'static/js/speaking-session.js')
+
+    def test_names_and_the_query_string_are_kept(self):
+        response = self.page('learn.school.lan:8000', f'{self.path}?from=hub&x=1')
+        self.assertEqual(self.secure_href(response), f'https://learn.school.lan:8443{self.path}?from=hub&amp;x=1')
+
+    def test_a_host_without_a_port_works_too(self):
+        self.assertEqual(self.secure_href(self.page('192.168.2.72')), f'https://192.168.2.72:8443{self.path}')
+
+    def test_ipv6_addresses_keep_their_brackets(self):
+        self.assertEqual(self.secure_href(self.page('[fd00::1]:8000')), f'https://[fd00::1]:8443{self.path}')
+
+    def test_port_443_is_left_out_of_the_address(self):
+        with override_settings(HTTPS_PORT='443'):
+            self.assertEqual(self.secure_href(self.page('192.168.2.72:8000')), f'https://192.168.2.72{self.path}')
+
+    def test_localhost_needs_no_https(self):
+        for host in ('localhost:8000', 'localhost', '127.0.0.1:8000', '[::1]:8000', 'learn.localhost:8000'):
+            response = self.page(host)
+            self.assertEqual(response.status_code, 200, host)
+            self.assertNotContains(response, 'secure-note', msg_prefix=host)
+
+    def test_a_visitor_who_came_over_https_is_not_sent_anywhere(self):
+        response = self.page('192.168.2.72:8443', HTTP_X_FORWARDED_PROTO='https')
+        self.assertNotContains(response, 'secure-note')
+
+    def test_the_header_of_a_visitor_is_not_trusted_without_the_https_settings(self):
+        with override_settings(SECURE_PROXY_SSL_HEADER=None):
+            response = self.page('192.168.2.72:8000', HTTP_X_FORWARDED_PROTO='https')
+        self.assertIsNotNone(self.secure_href(response))
+
+    def test_without_an_https_port_there_is_no_address_to_offer(self):
+        for port in ('', 'abc', '84 43', '-1'):
+            with override_settings(HTTPS_PORT=port):
+                self.assertNotContains(self.page('192.168.2.72:8000'), 'secure-note', msg_prefix=repr(port))
+
+    def test_parts_that_cannot_be_started_yet_do_not_nag(self):
+        other = make_set(self.course, part=P12)
+        url = reverse('speaking:ready', args=[self.course.slug, 2, other.pk])
+        self.assertNotContains(self.page('192.168.2.72:8000', url), 'secure-note')

@@ -30,4 +30,28 @@ document.querySelectorAll('[data-formset]').forEach(function (section) {
         row.querySelector('input[name$="-DELETE"]').checked = true;
         row.hidden = true;
     });
+
+    // A formset marked data-enter-next is typed through box after box (the key vocabulary): Enter moves to the next
+    // box instead of sending the whole form, and from the last box of a filled-in last row it adds a new row.
+    if (section.hasAttribute('data-enter-next')) {
+        rows.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' || event.isComposing || event.target.type !== 'text') {
+                return;
+            }
+            event.preventDefault();
+            const boxes = Array.from(rows.querySelectorAll('input[type="text"]')).filter(function (box) {
+                return !box.closest('[data-row]').hidden;
+            });
+            const next = boxes[boxes.indexOf(event.target) + 1];
+            if (next) {
+                next.focus();
+                return;
+            }
+            const filled = Array.from(event.target.closest('[data-row]').querySelectorAll('input[type="text"]')).some(
+                function (box) { return box.value.trim() !== ''; });
+            if (filled) {
+                section.querySelector('[data-add]').click();
+            }
+        });
+    }
 });

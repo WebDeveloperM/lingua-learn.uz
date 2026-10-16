@@ -23,7 +23,6 @@
                     {% include "panel/_field.html" with field=form.first_question_number %}
                 </div>
                 {% include "panel/_field.html" with field=form.questions_count %}
-                {% include "panel/_field.html" with field=form.key_words_count %}
                 {% include "panel/_field.html" with field=form.instructions %}
                 <div class="form-actions-row">
                     <button type="submit" class="btn btn-primary">Saqlash</button>
@@ -69,6 +68,22 @@
             </p>
             {% else %}
             <p class="empty-note">Bu Part'da hali mashq yo'q. «Mashq qo'shish» tugmasini bosing.</p>
+            {% endif %}
+        </section>
+
+        <section class="panel-card">
+            <header class="card-head">
+                <h2>Key vocabulary{% if word_total %} <small class="muted-sm">· {{ word_total }} ta so'z</small>{% endif %}</h2>
+                <a href="{% url 'panel:part_words' part.pk %}" class="btn btn-primary btn-sm">{% if word_total %}✏️ So'zlarni tahrirlash{% else %}➕ So'z qo'shish{% endif %}</a>
+            </header>
+            {% if word_total %}
+            <p class="muted-sm" style="margin-top:-6px;">O'quvchi Part kartasidagi «Key vocabulary» tugmasini bosganda shu so'zlar chiqadi.</p>
+            <ul class="kw-chips">
+                {% for word in word_preview %}<li>{{ word }}</li>{% endfor %}
+                {% if word_more > 0 %}<li class="kw-more">va yana {{ word_more }} ta</li>{% endif %}
+            </ul>
+            {% else %}
+            <p class="empty-note">Bu Part'da hali so'z yo'q. «So'z qo'shish» tugmasini bosing: so'z qo'shilgach, o'quvchilarda «Key vocabulary» tugmasi chiqadi.</p>
             {% endif %}
         </section>
         {% endif %}

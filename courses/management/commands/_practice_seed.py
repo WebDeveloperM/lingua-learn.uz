@@ -16,7 +16,6 @@ class PracticeSeedCommand(BaseCommand):
     questions = {}
     instructions = {}
     durations = {}  # number -> minutes for the exercises created by this command
-    key_words_count = 50
 
     def add_arguments(self, parser):
         parser.add_argument('--course', help="Kurs slug'i (berilmasa, birinchi shu skill kursi olinadi)")
@@ -42,7 +41,7 @@ class PracticeSeedCommand(BaseCommand):
         part, created = Part.objects.get_or_create(
             course=course, number=number,
             defaults={
-                'icon': icon, 'name': name, 'key_words_count': self.key_words_count,
+                'icon': icon, 'name': name,
                 'kind': kind, 'first_question_number': first_question,
                 'questions_count': self.questions.get(number, 0),
             },

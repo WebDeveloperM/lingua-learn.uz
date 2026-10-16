@@ -1,10 +1,11 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.forms import inlineformset_factory
+from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from courses.models import Course, Exercise, LearningOutcome, Part, Question, SkillTag
+from courses.models import Course, Exercise, KeyWord, LearningOutcome, Part, Question, SkillTag
 from courses.passages import MAX_GAPS, passage_answers
+from courses.vocabulary import FORMAT, MAX_WORDS, parse_key_words
 
 AUDIO_EXTENSIONS = ('mp3', 'wav', 'ogg', 'm4a', 'aac')
 MAX_AUDIO_MB = 30
@@ -95,15 +96,11 @@ class PartForm(forms.ModelForm):
 
     class Meta:
         model = Part
-        fields = [
-            'number', 'name', 'icon', 'kind', 'first_question_number', 'questions_count', 'key_words_count',
-            'instructions',
-        ]
+        fields = ['number', 'name', 'icon', 'kind', 'first_question_number', 'questions_count', 'instructions']
         labels = {
             'name': 'Nomi',
             'icon': 'Belgi (emoji)',
             'kind': 'Mashq turi',
-            'key_words_count': 'Key vocabulary so\'zlari soni',
             'instructions': 'Umumiy ko\'rsatma',
         }
         help_texts = {
@@ -111,7 +108,6 @@ class PartForm(forms.ModelForm):
             'icon': 'Masalan: 💬',
             'kind': 'Savollar qanday ko\'rinishi va qanday tekshirilishini belgilaydi.',
             'first_question_number': 'Savollar Part\'lar bo\'ylab davom etadi: 1-Part 1–8, 2-Part 9–14 bo\'lsa, 2-Part uchun 9 yozing.',
-            'key_words_count': '«Key vocabulary · 50 words» belgisida ko\'rinadi. 0 bo\'lsa, belgi chiqmaydi.',
             'instructions': (
                 'Shu Part\'dagi barcha mashqlarda ko\'rsatma sifatida chiqadi: Listening\'da audio ostida, Reading\'da matn '
                 'tepasida (mashqning o\'zida boshqa matn yozish ham mumkin). **so\'z** qalin yoziladi.'
@@ -147,6 +143,94 @@ class PartForm(forms.ModelForm):
                 "savollar turga qarab boshqacha saqlanadi."
             )
         return kind
+
+
+class KeyWordForm(forms.ModelForm):
+    """One row of the key vocabulary editor: a word, how it is said, what it means and an example sentence."""
+
+    class Meta:
+        model = KeyWord
+        fields = ['word', 'transcription', 'meaning', 'example']
+        widgets = {
+            'word': forms.TextInput(attrs={'placeholder': "So'z: pencil", 'aria-label': "So'z"}),
+            'transcription': forms.TextInput(attrs={'placeholder': 'Talaffuz: ˈpensl', 'aria-label': 'Talaffuz'}),
+            'meaning': forms.TextInput(attrs={'placeholder': "Ma'no: qalam", 'aria-label': "Ma'no"}),
+            'example': forms.TextInput(attrs={
+                'placeholder': 'Misol: She borrowed a pencil from her friend.', 'aria-label': 'Misol',
+            }),
+        }
+        # the message sits under the row, so it must say which box it is about
+        error_messages = {
+            'word': {'required': "So'z yozilmagan.", 'max_length': "So'z %(limit_value)d belgidan oshmasligi kerak."},
+            'transcription': {'max_length': 'Talaffuz %(limit_value)d belgidan oshmasligi kerak.'},
+            'meaning': {
+                'required': "O'zbekcha ma'no yozilmagan.", 'max_length': "Ma'no %(limit_value)d belgidan oshmasligi kerak.",
+            },
+            'example': {'max_length': 'Misol %(limit_value)d belgidan oshmasligi kerak.'},
+        }
+
+    def clean_word(self):
+        return ' '.join(self.cleaned_data['word'].split())
+
+    def clean_transcription(self):
+        # the card puts the slashes round it: typing /ˈpensl/ is the same as typing ˈpensl
+        return ' '.join(self.cleaned_data['transcription'].split()).strip('/ ')
+
+    def clean_meaning(self):
+        return ' '.join(self.cleaned_data['meaning'].split())
+
+    def clean_example(self):
+        return ' '.join(self.cleaned_data['example'].split())
+
+
+class BaseKeyWordFormSet(BaseInlineFormSet):
+    def kept_count(self):
+        """How many words the Part will have once this is saved: the filled-in rows that are not removed."""
+        return sum(1 for form in self.forms if form.cleaned_data and not self._should_delete_form(form))
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        total = self.kept_count()
+        if total > MAX_WORDS:
+            raise ValidationError(f"Bitta Part'da {MAX_WORDS} tadan ko'p so'z bo'lmaydi (hozir {total} ta).")
+
+
+def key_word_formset_class(blank_rows):
+    """Formset of a Part's words, followed by `blank_rows` empty rows to type new words in."""
+    return inlineformset_factory(
+        Part, KeyWord, form=KeyWordForm, formset=BaseKeyWordFormSet,
+        fields=['word', 'transcription', 'meaning', 'example'], extra=blank_rows, can_delete=True,
+    )
+
+
+class BulkWordsForm(forms.Form):
+    """A list of words pasted in at once: they are added after the rows of the editor."""
+
+    bulk = forms.CharField(
+        label="So'zlar ro'yxati", required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 8, 'spellcheck': 'false',
+            'placeholder': (
+                'pencil /ˈpensl/ | qalam | She borrowed a pencil from her friend.\n'
+                'student /ˈstjuːdənt/ | talaba, o\'quvchi | The new student joined our class.\n'
+                'water | suv'
+            ),
+        }),
+        help_text=(
+            f'Har qatorga bitta so\'z, kartochkada qanday ko\'rinsa shunday: {FORMAT}. Faqat so\'z va ma\'no shart; '
+            f'talaffuz va misol ixtiyoriy. Excel yoki Google Sheets\'dan ustunlarni (so\'z, talaffuz, ma\'no, misol) '
+            f'ko\'chirib qo\'ysangiz ham bo\'ladi. «Saqlash» bosilganda bu so\'zlar yuqoridagi ro\'yxat oxiriga '
+            f'qo\'shiladi va qatorlar bo\'lib ko\'rinadi.'
+        ),
+    )
+
+    def clean_bulk(self):
+        entries, problems = parse_key_words(self.cleaned_data['bulk'])
+        if problems:
+            raise ValidationError(problems)
+        return entries
 
 
 def parse_options(text):

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ course.get_category_display }} · {{ part.label }} · {{ set.title }} | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{% url 'speaking:part' course.slug part.number %}">← {{ part.label }}</a>
+            <h1 class="exercise-title"><span aria-hidden="true">🎉</span> Well done!</h1>
+            <p class="sp-lead">You answered {{ questions }}. Here is what you said and what the AI coach thinks of it.</p>
+            <p class="sp-coins">
+                {% if attempt.coins %}
+                <span aria-hidden="true">🪙</span> You earned <strong>{{ attempt.coins }} coin{{ attempt.coins|pluralize }}</strong>: you spoke until the timer ended for every question.
+                {% else %}
+                <span aria-hidden="true">🪙</span> No coins this time: you pressed “I’m done” before the timer ended. Speak for the full time to earn coins.
+                {% endif %}
+            </p>
+
+            <section class="sp-result-card" aria-label="Your answers">
+                {% for answer in answers %}
+                <article class="sp-ans">
+                    <p class="sp-ans-q">{{ answer.number }}. {{ answer.question }}</p>
+                    <div class="sp-box">
+                        <strong class="sp-box-title">Your answer</strong>
+                        {% if answer.transcript %}
+                        <p class="sp-transcript">“{{ answer.transcript }}”</p>
+                        {% else %}
+                        <p class="sp-muted">We could not hear any words in this answer.</p>
+                        {% endif %}
+                        {% if answer.audio %}
+                        <audio controls preload="metadata" data-fix-duration src="{% url 'speaking:answer_audio' course.slug answer.pk %}"></audio>
+                        {% endif %}
+                        {% with spoken=answer.seconds|floatformat:0 %}
+                        <p class="sp-muted">You spoke for {{ spoken }} second{{ spoken|pluralize }}{% if answer.finished_early %} · you pressed “I’m done” early{% endif %}.</p>
+                        {% endwith %}
+                    </div>
+                    {% if answer.feedback %}
+                    <div class="sp-box sp-feedback">
+                        <strong class="sp-box-title"><span aria-hidden="true">🤖</span> AI feedback</strong>
+                        <p class="sp-summary">{{ answer.feedback.summary }}</p>
+                        <ul class="sp-points">
+                            <li><strong>Grammar</strong> — {{ answer.feedback.grammar }}</li>
+                            <li><strong>Vocabulary</strong> — {{ answer.feedback.vocabulary }}</li>
+                            <li><strong>Fluency</strong> — {{ answer.feedback.fluency }}</li>
+                            <li><strong>Pronunciation</strong> — {{ answer.feedback.pronunciation }}</li>
+                        </ul>
+                        {% if answer.feedback.try_saying %}<p class="sp-try"><strong>Try saying:</strong> {{ answer.feedback.try_saying }}</p>{% endif %}
+                    </div>
+                    {% endif %}
+                </article>
+                {% endfor %}
+
+                {% if attempt.feedback_status != 'ready' %}
+                <div class="sp-notice" id="sp-notice">
+                    {% if attempt.feedback_status == 'empty' %}
+                    <p><span aria-hidden="true">🎤</span> We could not hear any words, so there was nothing for the AI to check. {% if transcribes %}Speak a little louder and closer to the microphone.{% else %}Speak closer to the microphone and use Google Chrome or Microsoft Edge: they turn your speech into text.{% endif %}</p>
+                    {% elif attempt.feedback_status == 'unconfigured' and not ai_ready %}
+                    <p><span aria-hidden="true">🤖</span> The AI feedback is not turned on on this site yet, so nobody checked these answers. They are saved: once your teacher turns the AI on, open this page again and press <strong>Get the feedback</strong>.</p>
+                    {% if user.is_admin %}<p class="sp-muted">For the admin: put <code>GROQ_API_KEY=gsk_…</code> (a free key from console.groq.com) or <code>ANTHROPIC_API_KEY=sk-ant-…</code> (a paid key from console.anthropic.com) into the <code>.env</code> file and run <code>docker compose up -d</code>. The button appears here after that.</p>{% endif %}
+                    {% elif attempt.feedback_status == 'unconfigured' %}
+                    <p><span aria-hidden="true">🤖</span> The AI was turned on after this practice. Press the button to get the feedback on these answers now.</p>
+                    {% else %}
+                    <p><span aria-hidden="true">🤖</span> We could not get the AI feedback just now. Please try again a little later.</p>
+                    {% if user.is_admin and attempt.feedback_error %}<p class="sp-muted">{{ attempt.feedback_error }}</p>{% endif %}
+                    {% endif %}
+                    {% if attempt.feedback_status == 'failed' or attempt.feedback_status == 'unconfigured' and ai_ready %}
+                    <form method="post" action="{% url 'speaking:retry_feedback' course.slug attempt.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="pill-btn is-primary">{% if attempt.feedback_status == 'failed' %}Get the feedback again{% else %}Get the feedback{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </section>
+
+            <div class="result-actions sp-result-actions">
+                <a class="btn btn-primary start-btn" href="{% url 'speaking:ready' course.slug part.number set.pk %}">Try again</a>
+                <a class="pill-btn" href="{% url 'speaking:part' course.slug part.number %}">Back to lesson</a>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/speaking.js' %}" defer></script>
+{% endblock %}

@@ -18,8 +18,8 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-
+# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -126,6 +126,10 @@ MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Django refuses a form with more than 1000 fields (400 Bad Request). The key vocabulary editor of the panel sends six
+# fields per word (up to 300 words in a Part), so the limit is raised to fit it; ordinary forms send a few dozen.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 3000
+
 
 # Auth redirects
 
@@ -137,3 +141,32 @@ LOGOUT_REDIRECT_URL = 'core:home'
 # Shown to users whose accounts are waiting for admin activation (see .env)
 
 ADMIN_TELEGRAM_URL = os.environ.get('ADMIN_TELEGRAM_URL', '')
+
+
+# AI feedback on spoken answers (Speaking practice). Claude reads the text of what the student said; without a key
+# the practice still works and the results page just says the AI feedback is not set up.
+
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+ANTHROPIC_BASE_URL = os.environ.get('ANTHROPIC_BASE_URL', 'https://api.anthropic.com').strip().rstrip('/')
+SPEAKING_AI_MODEL = os.environ.get('SPEAKING_AI_MODEL', 'claude-sonnet-5-5').strip()
+SPEAKING_FEEDBACK_LANGUAGE = os.environ.get('SPEAKING_FEEDBACK_LANGUAGE', 'English').strip()
+
+# The free alternative, Groq (https://console.groq.com). With its key the recordings are turned into text on the server
+# (Whisper), so the answers are checked in any browser, and Groq also writes the feedback when there is no Claude key.
+# GROQ_MODEL must be one that answers in a given JSON schema (strict structured outputs), like the gpt-oss models.
+
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '').strip()
+GROQ_BASE_URL = os.environ.get('GROQ_BASE_URL', 'https://api.groq.com/openai/v1').strip().rstrip('/')
+GROQ_MODEL = os.environ.get('GROQ_MODEL', 'openai/gpt-oss-120b').strip()
+GROQ_TRANSCRIPTION_MODEL = os.environ.get('GROQ_TRANSCRIPTION_MODEL', 'whisper-large-v3').strip()
+
+
+# https. The "https" service of docker-compose.yml (nginx) answers on this port and passes the requests on to Django,
+# saying in X-Forwarded-Proto that the visitor came over https. Browsers give the microphone only to https pages (and
+# to localhost), so the Speaking practice sends visitors of the plain-http address to https://<same address>:HTTPS_PORT.
+# Empty = there is no https address (running without Docker).
+
+HTTPS_PORT = os.environ.get('HTTPS_PORT', '').strip()
+
+# Only with that proxy in front: without it any visitor could claim "https" with this header.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if HTTPS_PORT else None

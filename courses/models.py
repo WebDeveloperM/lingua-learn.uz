@@ -139,7 +139,6 @@ class Part(models.Model):
     number = models.PositiveSmallIntegerField()
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=16, blank=True)
-    key_words_count = models.PositiveSmallIntegerField(default=0)
     kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.CHOICE)
     first_question_number = models.PositiveSmallIntegerField(
         default=1,
@@ -177,6 +176,23 @@ class Part(models.Model):
     def needs_audio(self):
         """Only Listening exercises are played from a recording; Reading and the others have no audio."""
         return self.course.category == Category.LISTENING
+
+
+class KeyWord(models.Model):
+    """A word of a Part's key vocabulary: one of the cards students see when they open "Key vocabulary"."""
+
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='key_words')
+    order = models.PositiveSmallIntegerField(default=0)
+    word = models.CharField(max_length=100)
+    transcription = models.CharField(max_length=100, blank=True, help_text="Talaffuz belgilari, / belgilarisiz: ˈpensl")
+    meaning = models.CharField(max_length=200, help_text="So'zning o'zbekcha ma'nosi.")
+    example = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ['order', 'pk']
+
+    def __str__(self):
+        return f'{self.word} — {self.meaning}'
 
 
 class Exercise(models.Model):

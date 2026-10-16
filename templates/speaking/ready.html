@@ -10,24 +10,90 @@
 <section class="practice-section">
     <div class="container">
         <div class="exercise-wrap">
-            <a class="pill-btn" href="{% url 'speaking:part' course.slug part.number %}">← {{ part.label }}</a>
-            <h1 class="exercise-title"><span aria-hidden="true">{{ part.icon }}</span> {{ part.label }} · {{ set.title }}</h1>
+            <div id="sp-intro">
+                <a class="pill-btn" href="{% url 'speaking:part' course.slug part.number %}">← {{ part.label }}</a>
+                <h1 class="exercise-title"><span aria-hidden="true">{{ part.icon }}</span> {{ part.label }} · {{ set.title }}</h1>
 
-            <section class="ready-card">
-                <h2>Ready? <span aria-hidden="true">🎙️</span></h2>
-                <p class="ready-meta">{{ questions }} · about <strong>{{ duration }}</strong>.</p>
-                <ul class="sp-rules">
-                    <li>Each question is read aloud, then you get time to prepare.</li>
-                    <li>After the beep, speak until the timer ends. Press <strong>I'm done</strong> to finish early.</li>
-                    <li><span aria-hidden="true">🪙</span> You get <strong>{{ coins }} coin{{ coins|pluralize }}</strong> only if you speak until the timer ends for every question.</li>
-                    <li>Find a quiet place and speak out loud, like in the real exam.</li>
-                </ul>
-                <label class="sp-check"><input type="checkbox" id="read-aloud" checked> <span>Read the questions aloud</span></label>
-                <button type="button" class="btn btn-primary btn-lg start-btn" id="start-btn" disabled><span aria-hidden="true">▶</span> Start</button>
-                <p class="not-ready-note">The speaking session itself is coming soon.</p>
+                <section class="ready-card">
+                    <h2>Ready? <span aria-hidden="true">🎙️</span></h2>
+                    <p class="ready-meta">{{ questions }} · about <strong>{{ duration }}</strong>.</p>
+                    <ul class="sp-rules">
+                        <li>Each question is read aloud, then you get time to prepare.</li>
+                        <li>After the beep, speak until the timer ends. Press <strong>I'm done</strong> to finish early.</li>
+                        <li><span aria-hidden="true">🪙</span> You get <strong>{{ coins }} coin{{ coins|pluralize }}</strong> only if you speak until the timer ends for every question.</li>
+                        <li>Find a quiet place and speak out loud, like in the real exam.</li>
+                    </ul>
+                    <label class="sp-check"><input type="checkbox" id="read-aloud" checked> <span>Read the questions aloud</span></label>
+                    {% if session %}
+                    <button type="button" class="btn btn-primary btn-lg start-btn" id="start-btn"><span aria-hidden="true">▶</span> Start</button>
+                    <p class="sp-mic-note" id="start-note" role="status" aria-live="polite" hidden></p>
+                    {% if secure_url %}
+                    <div class="sp-mic-note is-error sp-secure" id="secure-note" role="alert" hidden>
+                        <strong><span aria-hidden="true">🔒</span> This page was opened over plain http, so the browser will not give it the microphone.</strong>
+                        <p><a class="pill-btn is-primary" id="secure-link" href="{{ secure_url }}">Open the secure page →</a></p>
+                        <small>The first time, your browser may say that the connection is not private. That is expected for this site: choose <em>Advanced</em>, then <em>Continue</em>.</small>
+                    </div>
+                    {% endif %}
+                    <div class="sp-mic-help" id="mic-help" hidden>
+                        <strong>The microphone is blocked.</strong>
+                        <ol>
+                            <li>Click the icon at the left of the address bar (🔒 or ⓘ), or the crossed-out microphone at its right end.</li>
+                            <li>Set <strong>Microphone</strong> to <strong>Allow</strong>.</li>
+                            <li>Reload this page (F5) and press <strong>Start</strong>.</li>
+                        </ol>
+                        <p>On Windows also check Settings → Privacy &amp; security → Microphone: microphone access and “Let desktop apps access your microphone” must be on.</p>
+                        <button type="button" class="pill-btn" id="mic-recheck">I allowed it — check again</button>
+                    </div>
+                    {% if not transcribes %}
+                    <p class="sp-support" id="sp-support" hidden>Tip: open this page in Google Chrome or Microsoft Edge. They turn your speech into text, so the AI can check your answers. Your voice is recorded in any browser.</p>
+                    {% endif %}
+                    {% else %}
+                    <button type="button" class="btn btn-primary btn-lg start-btn" id="start-btn" disabled><span aria-hidden="true">▶</span> Start</button>
+                    <p class="not-ready-note">The practice for {{ part.label }} is coming soon.</p>
+                    {% endif %}
+                </section>
+            </div>
+
+            {% if session %}
+            <section class="sp-run" id="sp-run" hidden>
+                {% csrf_token %}
+                <header class="sp-run-head">
+                    <p><strong>{{ part.label }}</strong> <small id="sp-step-label"></small></p>
+                    <strong id="sp-step-count"></strong>
+                </header>
+                <div class="sp-steps" id="sp-steps" aria-hidden="true"></div>
+                <div class="sp-question" id="sp-question"></div>
+                <div class="sp-stage" id="sp-stage" data-stage="listen">
+                    <div class="sp-circle" id="sp-circle"><span id="sp-circle-text"></span></div>
+                    <div class="sp-stage-body" aria-live="polite">
+                        <strong id="sp-stage-title"></strong>
+                        <p id="sp-stage-hint"></p>
+                        <div class="sp-bar" aria-hidden="true"><span id="sp-bar"></span></div>
+                    </div>
+                </div>
+                <div class="sp-run-actions" id="sp-actions">
+                    <button type="button" class="pill-btn" id="sp-stop">Stop</button>
+                    <button type="button" class="pill-btn is-primary" id="sp-next"></button>
+                </div>
+                <div class="submit-confirm" id="sp-stop-confirm" role="alert" hidden>
+                    <p>Stop this practice? Your answers will not be saved.</p>
+                    <div class="submit-confirm-actions">
+                        <button type="button" class="pill-btn is-primary" id="sp-stop-yes">Yes, stop</button>
+                        <button type="button" class="pill-btn" id="sp-stop-no">Keep going</button>
+                    </div>
+                </div>
+                <div class="submit-confirm" id="sp-finishing" role="status" hidden>
+                    <p id="sp-finishing-text"></p>
+                    <div class="submit-confirm-actions">
+                        <button type="button" class="pill-btn is-primary" id="sp-finishing-retry" hidden>Try again</button>
+                    </div>
+                </div>
             </section>
+            {% endif %}
         </div>
     </div>
 </section>
+{% if session %}{{ session|json_script:"sp-config" }}{% endif %}
 <script src="{% static 'js/speaking.js' %}" defer></script>
+{% if session %}<script src="{% static 'js/speaking-session.js' %}" defer></script>{% endif %}
 {% endblock %}

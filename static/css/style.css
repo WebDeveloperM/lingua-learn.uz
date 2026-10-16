@@ -568,13 +568,11 @@ main:has(> .practice-section:last-child) + .site-footer { margin-top: 0; }
     font-weight: 600;
 }
 .home-hero-art {
-    background: #fff;
     border-radius: 16px;
     box-shadow: var(--card-shadow);
-    padding: 30px;
-    text-align: center;
-    font-size: 90px;
+    overflow: hidden;
 }
+.home-hero-art img { display: block; width: 100%; height: auto; }
 .home-section-head { text-align: center; max-width: 560px; margin: 0 auto 30px; }
 .home-section-head h2 { font-size: 28px; margin: 0 0 10px; }
 .home-section-head p { color: var(--text-muted); }
@@ -607,11 +605,14 @@ main:has(> .practice-section:last-child) + .site-footer { margin-top: 0; }
 .ex-label { font-size: 12.5px; color: var(--ink-muted); }
 .ex-number { font-size: 24px; font-weight: 700; line-height: 1.2; color: var(--ink); }
 .ex-status { font-size: 13px; font-weight: 600; color: var(--green); }
+
+/* Key vocabulary: a button under the exercises that opens the words of the Part (<details>, so it works without
+   script; vocabulary.js only adds the search box) */
+.vocab { margin-top: 18px; }
 .vocab-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-top: 18px;
     padding: 7px 14px;
     background: #fff;
     border: 1.5px solid var(--ink);
@@ -619,7 +620,43 @@ main:has(> .practice-section:last-child) + .site-footer { margin-top: 0; }
     font-size: 14px;
     font-weight: 600;
     color: var(--ink);
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
 }
+.vocab-pill::-webkit-details-marker { display: none; }
+.vocab-pill:hover { background: var(--green-bg); }
+.vocab-pill:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+.vocab[open] > .vocab-pill { background: var(--green-bg); box-shadow: 0 0 0 1px var(--ink); }
+.vocab-when-open { display: none; }
+.vocab[open] .vocab-when-closed { display: none; }
+.vocab[open] .vocab-when-open { display: inline; }
+.vocab-body { margin-top: 16px; padding-top: 16px; border-top: 2px dashed rgba(23, 59, 42, .35); }
+.vocab-search {
+    width: 100%;
+    padding: 11px 14px;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    text-overflow: ellipsis;
+}
+.vocab-search[hidden] { display: none; }
+.vocab-search::placeholder { color: var(--ink-muted); opacity: .85; }
+.vocab-search:focus-visible { outline: 3px solid rgba(26, 156, 92, .35); border-color: var(--green-dark); }
+.vocab-status { margin: 10px 2px 0; font-size: 13.5px; color: var(--ink-muted); }
+.vocab-status:empty { display: none; }
+.vocab-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.vocab-card { padding: 10px 12px 11px; background: #fff; border: 1.5px solid var(--ink); border-radius: 12px; }
+.vocab-card[hidden] { display: none; }
+.vocab-card p { margin: 0; }
+.vocab-word { font-size: 15.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.vocab-word strong { font-weight: 700; color: var(--ink); }
+.vocab-ipa { font-size: 13px; font-weight: 400; color: var(--ink-muted); }
+.vocab-meaning { margin-top: 2px; font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--green-dark); }
+.vocab-example { margin-top: 3px; font-size: 13px; font-style: italic; line-height: 1.45; color: var(--ink-muted); }
 
 a.ex-tile { transition: transform .15s ease, box-shadow .15s ease; }
 a.ex-tile:hover, a.ex-tile:focus-visible {
@@ -1181,6 +1218,65 @@ button.phrase:hover, button.phrase:focus-visible { background: #dff3e8; outline:
 .sp-rules { margin: 6px 0 14px; padding-left: 20px; list-style: disc; color: var(--ink); font-size: 15px; line-height: 1.7; }
 .sp-check { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; color: var(--ink); font-size: 14.5px; font-weight: 700; cursor: pointer; }
 .sp-check input { width: 16px; height: 16px; accent-color: var(--green); }
+.sp-support { margin: 10px 0 0; padding: 8px 12px; background: #fff7e0; border: 1.5px solid #f3dca0; border-radius: 12px; color: #8a5a00; font-size: 13.5px; line-height: 1.5; }
+/* what the microphone permission is doing: waiting for Allow, allowed, or a problem */
+.sp-mic-note { margin: 12px 0 0; padding: 9px 14px; border: 1.5px solid; border-radius: 12px; font-size: 14px; font-weight: 600; line-height: 1.5; }
+.sp-mic-note.is-wait { background: #fff7e0; border-color: #f3dca0; color: #6f4a00; }
+.sp-mic-note.is-ok { background: var(--green-bg); border-color: var(--green-dark); color: var(--green-dark); }
+.sp-mic-note.is-error { background: #fdecec; border-color: #f0b4b4; color: #9b1c1c; }
+.sp-secure p { margin: 8px 0 6px; }
+.sp-secure .pill-btn { text-decoration: none; cursor: pointer; }
+.sp-secure small { display: block; color: #7a2a2a; font-size: 13px; font-weight: 500; line-height: 1.5; }
+.sp-mic-help { margin: 10px 0 0; padding: 12px 16px; background: #fff; border: 1.5px solid #f0b4b4; border-radius: 14px; color: var(--ink); font-size: 14.5px; line-height: 1.6; }
+.sp-mic-help ol { margin: 6px 0 8px; padding-left: 22px; list-style: decimal; }
+.sp-mic-help p { margin: 0 0 10px; color: var(--ink-muted); font-size: 13.5px; }
+.sp-mic-help .pill-btn { cursor: pointer; }
+
+/* the practice itself: one question at a time (listen → prepare → speak) */
+.pill-btn[hidden], .btn[hidden] { display: none; }
+.sp-stage[hidden], .sp-run-actions[hidden] { display: none; }
+.sp-run-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 4px 0 8px; color: var(--ink); }
+.sp-run-head p { margin: 0; }
+.sp-run-head small { margin-left: 6px; color: var(--ink-muted); font-size: 14px; }
+.sp-steps { display: flex; gap: 8px; margin-bottom: 14px; }
+.sp-steps span { flex: 1; height: 10px; background: #fff; border: 2px solid var(--ink); border-radius: 999px; }
+.sp-steps span.is-done { background: var(--green); }
+.sp-steps span.is-current { background: #fbbf24; }
+.sp-question { margin-bottom: 14px; padding: 18px 22px; background: #fdfffd; border: 2.5px solid var(--ink); border-radius: 22px; color: var(--ink); font-size: 20px; font-weight: 700; line-height: 1.4; }
+.sp-stage { display: flex; align-items: center; gap: 20px; padding: 18px 22px; background: #fdfffd; border: 2.5px solid var(--ink); border-radius: 22px; }
+.sp-circle { flex-shrink: 0; display: grid; place-items: center; width: 80px; height: 80px; background: #fff; border: 3px solid var(--ink); border-radius: 50%; color: var(--ink); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sp-stage[data-stage="listen"] .sp-circle { font-size: 32px; }
+.sp-stage[data-stage="prepare"] .sp-circle { background: #fbbf24; }
+.sp-stage[data-stage="speak"] .sp-circle { background: var(--green); color: #fff; animation: sp-pulse 1.4s ease-out infinite; }
+@keyframes sp-pulse { 0% { box-shadow: 0 0 0 0 rgba(26, 156, 92, .45); } 100% { box-shadow: 0 0 0 16px rgba(26, 156, 92, 0); } }
+.sp-stage-body { flex: 1; min-width: 0; }
+.sp-stage-body strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 15px; }
+.sp-stage-body p { margin: 0 0 8px; min-height: 1.4em; color: var(--ink-muted); font-size: 14.5px; }
+.sp-bar { height: 12px; background: #fff; border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; }
+.sp-bar span { display: block; width: 0; height: 100%; background: var(--green); }
+.sp-run-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.sp-run-actions .pill-btn { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .sp-stage[data-stage="speak"] .sp-circle { animation: none; } }
+
+/* the results of a practice */
+.sp-coins { margin: 0 0 16px; color: var(--ink); font-size: 14.5px; font-weight: 700; line-height: 1.5; }
+.sp-result-card { margin-bottom: 18px; padding: 20px 22px; background: #fdfffd; border: 2.5px solid var(--ink); border-radius: 24px; }
+.sp-ans { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 2px dashed var(--ink); }
+.sp-ans:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.sp-ans-q { margin: 0 0 10px; color: var(--ink); font-size: 16px; font-weight: 700; line-height: 1.5; }
+.sp-box { margin-top: 10px; padding: 12px 16px; border: 1.5px dashed var(--ink); border-radius: 14px; }
+.sp-box audio { display: block; width: 100%; max-width: 420px; margin: 8px 0 4px; }
+.sp-box-title { display: block; margin-bottom: 6px; color: var(--ink-muted); font-size: 14px; }
+.sp-transcript { margin: 0 0 4px; color: var(--ink); font-size: 15px; line-height: 1.65; }
+.sp-muted { margin: 4px 0 0; color: var(--ink-muted); font-size: 13.5px; }
+.sp-summary { margin: 0 0 8px; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.55; }
+.sp-points { margin: 0 0 8px; padding-left: 20px; list-style: disc; color: var(--ink); font-size: 14.5px; line-height: 1.65; }
+.sp-points li { margin-bottom: 3px; }
+.sp-try { margin: 0; padding: 8px 12px; background: var(--green-bg); border-radius: 10px; color: var(--ink); font-size: 14.5px; line-height: 1.55; }
+.sp-notice { margin-top: 18px; padding: 12px 16px; background: #fff7e0; border: 1.5px solid #f3dca0; border-radius: 14px; color: #6f4a00; font-size: 14.5px; line-height: 1.55; }
+.sp-notice p { margin: 0 0 8px; }
+.sp-notice form { margin: 0; }
+.sp-notice code { padding: 1px 6px; background: #fff; border-radius: 6px; font-size: 13px; }
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 860px) {
@@ -1193,7 +1289,12 @@ button.phrase:hover, button.phrase:focus-visible { background: #dff3e8; outline:
     .form-row { grid-template-columns: 1fr; }
     .main-nav { display: none; }
 }
+@media (max-width: 700px) {
+    .vocab-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 560px) {
+    .vocab-grid { grid-template-columns: 1fr; }
+    .vocab-search { padding: 11px 10px; font-size: 13.5px; }
     .ex-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .practice-title { font-size: 28px; }
     .part-card { padding: 16px; }
@@ -1208,6 +1309,10 @@ button.phrase:hover, button.phrase:focus-visible { background: #dff3e8; outline:
     .sp-score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .sp-parts { grid-template-columns: 1fr; }
     .sp-sets { padding: 16px 14px 4px; }
+    .sp-question { padding: 14px 16px; font-size: 18px; }
+    .sp-stage { gap: 14px; padding: 14px 16px; }
+    .sp-circle { width: 64px; height: 64px; font-size: 18px; }
+    .sp-result-card { padding: 16px; }
     .course-grid { grid-template-columns: 1fr; }
     .course-title { font-size: 28px; }
     .home-hero h1 { font-size: 30px; }

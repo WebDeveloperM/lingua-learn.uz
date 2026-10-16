@@ -28,7 +28,7 @@ PRACTICE_INTROS = {
 
 
 def _practice_parts(course, user):
-    parts = list(course.parts.prefetch_related('exercises'))
+    parts = list(course.parts.prefetch_related('exercises', 'key_words'))
     results = {}
     if parts and user.is_authenticated:
         results = {
@@ -36,6 +36,7 @@ def _practice_parts(course, user):
             for result in ExerciseResult.objects.filter(user=user, exercise__part__course=course)
         }
     for part in parts:
+        part.key_word_list = list(part.key_words.all())
         part.exercise_list = list(part.exercises.all())
         for exercise in part.exercise_list:
             exercise.user_result = results.get(exercise.pk)
@@ -88,6 +89,7 @@ def course_detail(request, slug):
             'course': course,
             'parts': parts,
             'intro': PRACTICE_INTROS.get(course.category, DEFAULT_PRACTICE_INTRO),
+            'has_vocabulary': any(part.key_word_list for part in parts),
         })
 
     is_enrolled = (

@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from accounts.models import User
 
-from .models import Category, Course, Exercise, ExerciseResult, Part, Question
+from .models import Category, Course, Exercise, ExerciseResult, KeyWord, Part, Question
 from .passages import build_passage_blocks, passage_answers, sync_passage_questions
 from .support import (
     HEADINGS, MEAT_QUESTIONS, MEAT_TEXT, OLIVIA_ANSWERS, OLIVIA_PASSAGE, PARAGRAPHS, SUMMARY_ANSWERS, SUMMARY_PASSAGE,
@@ -36,7 +36,7 @@ class ReadingSeedTests(TestCase):
             ],
         )
         self.assertEqual(Exercise.objects.count(), 50)
-        self.assertEqual({p.key_words_count for p in parts}, {50})
+        self.assertFalse(KeyWord.objects.exists())  # the words of a Part are typed by an admin, never invented
 
     def test_the_formats_known_so_far(self):
         seed_reading()
@@ -135,7 +135,7 @@ class ReadingHubTests(TestCase):
             self.assertContains(response, text)
         self.assertContains(response, 'class="ex-tile"', count=50)
         self.assertContains(response, '10 ready', count=5)
-        self.assertContains(response, '📚 Key vocabulary · 50 words', count=5)
+        self.assertNotContains(response, 'Key vocabulary')  # no words typed yet
         self.assertNotContains(response, 'Paid')
         self.assertNotContains(response, 'Free')
 

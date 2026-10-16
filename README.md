@@ -38,6 +38,34 @@ Ma'lumotlar bazasi (SQLite) va yuklangan fayllar `app_data` Docker volume'ida sa
 shuning uchun konteyner qayta yaratilganda ham yo'qolmaydi. Volume'ni ham o'chirish
 uchun: `docker compose down -v` (ehtiyot bo'ling — barcha ma'lumotlar o'chadi).
 
+## HTTPS (Speaking mikrofoni uchun)
+
+Brauzer mikrofonni faqat `https://` sahifalarga va `localhost` ga beradi. Shuning uchun boshqa kompyuter yoki
+telefondan `http://192.168.2.72:8000` orqali kirilganda Speaking mashqi mikrofonni ishlata olmaydi.
+`docker compose up -d` ikkinchi xizmatni — **https** (nginx, `docker/https/`) ni ham ishga tushiradi:
+
+- Manzil: **https://192.168.2.72:8000/** — avvalgi port, faqat `https://` bilan. `8000` portini endi nginx
+  ushlaydi va har bir ulanishning birinchi baytlariga qarab ajratadi: oddiy `http` → Django (avvalgidek),
+  TLS (`https`) → https server (`docker/https/stream.conf`). **https://192.168.2.72:8443/** ham ishlaydi.
+  Shu kompyuterning o'zida `http://localhost:8000` ham yetarli.
+- Speaking'ning «Ready?» sahifasi `http://` orqali ochilsa, **Open the secure page →** tugmasi o'sha sahifaning
+  https manziliga olib boradi (login saqlanadi). `http://...:8443` yozilsa, o'zi https ga o'tadi.
+- Sertifikatni loyihaning o'z kichik sertifikat markazi (CA) imzolaydi, shuning uchun birinchi kirishda brauzer
+  «Подключение не защищено / Your connection is not private» deydi: **Дополнительные (Advanced) → Перейти на сайт
+  192.168.2.72 (небезопасно) / Continue**. Shundan keyin mikrofon ishlaydi (Allow so'raladi).
+- Ogohlantirishni butunlay yo'qotish uchun har bir qurilmada bir marta **https://192.168.2.72:8443/local-ca.crt**
+  ni yuklab, ishonchli markaz sifatida o'rnating:
+  - Windows: faylni oching → «Установить сертификат» → «Текущий пользователь» → «Поместить все сертификаты в
+    следующее хранилище» → «Доверенные корневые центры сертификации» → Далее → Готово → Да; brauzerni qayta oching.
+  - Android: Sozlamalar → Xavfsizlik → Shifrlash va hisob ma'lumotlari → Sertifikat o'rnatish → CA sertifikati.
+  - iPhone/iPad: faylni oching → Sozlamalar → Profil → O'rnatish; so'ng Asosiy → Haqida → Sertifikatlarga
+    ishonch sozlamalari → yoqing.
+- Kompyuter manzili (IP) o'zgarsa, `.env` ga `HTTPS_HOSTS=yangi.ip` (bir nechtasi: `a,b`) yozing va
+  `docker compose up -d` qiling: sayt sertifikati yangilanadi, qurilmalarga o'rnatilgan CA o'z kuchida qoladi.
+  Port `HTTPS_PORT` bilan o'zgartiriladi (standart 8443).
+- Sertifikatlar `https_certs` Docker volume'ida saqlanadi; CA kaliti tashqariga chiqmaydi, faqat ochiq qismi
+  (`/local-ca.crt`) beriladi. Django nginx yuborgan `X-Forwarded-Proto` ga faqat `HTTPS_PORT` berilganda ishonadi.
+
 ## Docker'siz o'rnatish (lokal)
 
 ```bash
@@ -180,7 +208,13 @@ Part 3 (15–20, sarlavhalar ro'yxati), Part 4 (21–29, matn va A–D / True-Fa
 matndagi bo'sh joylar 30–33 va test savollari 34–35).
 
 - Har bir mashq katakchasida «Exercise» va raqami bor; o'quvchi mashqni bajargan bo'lsa,
-  natijasi ham ko'rinadi (**⭐ 0/8**). Har bir Part'da «Key vocabulary · 50 words» belgisi bor.
+  natijasi ham ko'rinadi (**⭐ 0/8**).
+- **Key vocabulary.** Admin Part'ga so'zlar kiritgan bo'lsa (pastda), Part kartasida «📚 Key vocabulary · 50 words»
+  tugmasi chiqadi. Bosilganda «Hide vocabulary» bo'lib o'zgaradi va so'zlar kartochkalari ochiladi: so'z va talaffuzi,
+  o'zbekcha ma'nosi (yashil) va misol (3 ustun; planshetda 2, telefonda 1). Tepada qidiruv maydoni bor: u so'z,
+  ma'no va misoldan qidiradi, katta-kichik harf va apostrof turlarini (`'`, `ʻ`, `’`) farqlamaydi, bir nechta so'z
+  yozilsa hammasi bitta kartada bo'lishi kerak. So'z kiritilmagan Part'da tugma ko'rinmaydi. Tugma
+  JavaScript'siz ham ochiladi (faqat qidiruv maydoni JavaScript talab qiladi). Listening va Reading'da bir xil ishlaydi.
 - Part va mashqlarni yaratish: `docker compose exec web python manage.py seed_listening_parts` yoki
   `seed_reading_parts` (qayta ishga tushirish xavfsiz: mavjud Part'larni o'zgartirmaydi, faqat yetishmaganini qo'shadi).
   Reading uchun Part 1 mashqlari 8 daqiqa bilan yaratiladi.
@@ -236,8 +270,28 @@ Part'larga tegmaydi.
 `/panel/courses/` → kursni **Tahrirlash** → pastdagi **Mashqlar (Practice)** bo'limi:
 
 1. **Part qo'shish** (raqami, nomi, belgisi, turi, birinchi savol raqami, mashqdagi savollar soni,
-   «Key vocabulary» so'zlari soni, umumiy ko'rsatma; ko'rsatmada `**so'z**` qalin bo'ladi). Yangi Part
+   umumiy ko'rsatma; ko'rsatmada `**so'z**` qalin bo'ladi). Yangi Part
    uchun savol raqami avvalgi Part'ning oxiridan taklif qilinadi.
+   - **Key vocabulary so'zlari:** Part sahifasidagi «Key vocabulary» kartochkasida so'zlar soni va birinchi
+     so'zlar ko'rinadi, **➕ So'z qo'shish** (so'z bo'lsa **✏️ So'zlarni tahrirlash**) tugmasi so'zlar sahifasini
+     ochadi. U yerda har bir so'z alohida qator: **So'z**, **Talaffuz**, **Ma'no**, **Misol**. Faqat so'z va
+     ma'no shart. **+ So'z qo'shish** tugmasi yangi qator qo'shadi; oxirgi maydonda **Enter** bossangiz ham
+     yangi qator ochiladi (Enter maydonlar bo'ylab o'tkazadi, formani yubormaydi). **×** so'zni olib tashlaydi
+     (**Saqlash** bosilganda o'chadi). Saqlash tugmasi pastda doim ko'rinib turadi. Talaffuzni `/ˈpensl/` yoki
+     `ˈpensl` ko'rinishida yozish mumkin: kartochkada o'zi `/…/` ichida chiqadi. Bitta Part'da 300 tagacha so'z.
+   - **Ko'p so'zni birdaniga qo'shish:** shu sahifaning pastidagi yopiq «📋 Ko'p so'zni birdaniga qo'shish»
+     bo'limiga tayyor ro'yxatni ko'chirib qo'yish mumkin: har qatorga bitta so'z, kartochkada qanday ko'rinsa
+     shunday: `so'z /talaffuz/ | o'zbekcha ma'no | misol`. Masalan:
+     ```
+     pencil /ˈpensl/ | qalam | She borrowed a pencil from her friend.
+     student /ˈstjuːdənt/ | talaba, o'quvchi | The new student joined our class.
+     water | suv
+     ```
+     Excel yoki Google Sheets'dan to'rt ustunni (so'z, talaffuz, ma'no, misol) belgilab ko'chirib qo'ysangiz ham
+     bo'ladi. «Saqlash» bosilganda bu so'zlar qatorlar ro'yxatining oxiriga qo'shiladi. Xato bo'lsa (masalan,
+     ma'no yozilmagan), qator raqami bilan aytiladi va hech narsa saqlanmaydi.
+   - Hamma so'zlar olib tashlansa, o'quvchiga tugma ko'rinmaydi. Eski «so'zlar soni» raqami olib tashlangan:
+     «50 words» endi haqiqiy so'zlar sonidan hisoblanadi.
 2. Part sahifasida **Mashq qo'shish**.
 3. Mashq sahifasida **audio fayl** yuklang (mp3, wav, ogg, m4a, aac · 30 MB gacha), davomiylikni
    (daqiqa) kiriting va savollarni qo'shing. Audio va kamida 1 ta savol bo'lsa, mashq **Tayyor** bo'ladi.
@@ -338,8 +392,66 @@ Har bir test — haqiqiy imtihon: **Task 1.1**, **Task 1.2** va **Part 2**, jami
    ko'rinmaydi) va **🎙️ Practise this** tugmasi (mashq qilingan setda «Practise this again ✓»).
 3. **Practise this** → **Ready? 🎙️** sahifasi (kirish talab qilinadi): «3 questions · about 2 minutes»
    (vaqt partning taymerlaridan hisoblanadi), qoidalar, «Read the questions aloud» (tanlov brauzerda eslab
-   qolinadi) va **▶ Start**. Hozircha Start o'chirilgan: mashqning o'zi (taymer, gapirish) keyingi bosqichda
-   qo'shiladi. «Mashq qilingan» belgilari ham shunda (`SpeakingPractice`) yoziladi.
+   qolinadi) va **▶ Start**. Hozircha faqat **Part 1.1** boshlanadi; Part 1.2, 2 va 3 uchun Start o'chirilgan.
+4. **Mashq** (Start bosilgach shu sahifaning o'zida; brauzer mikrofonga ruxsat so'raydi). Har savol uchun:
+   **Listen** (savol ingliz tilida ovoz chiqarib o'qiladi; **Skip →** o'tkazib yuboradi; «Read the questions aloud»
+   belgilanmagan bo'lsa, bu bosqich yo'q) → **Prepare** (5 soniya, **Start speaking now →** bilan qisqartirish
+   mumkin) → **Speak now** (beep, so'ng 30 soniya; **I'm done →** erta tugatadi; javob yozib olinadi va matnga
+   aylantiriladi). Tepada 3 ta segment va «Question 2 of 3 · 2 / 3»; **Stop** ruxsat so'rab to'xtatadi (saqlanmaydi).
+5. Oxirgi savoldan keyin javoblar yuboriladi va **natija sahifasi** ochiladi: «🎉 Well done!», coinlar (hamma
+   savolda taymer oxirigacha gapirilgan bo'lsa, savollar soniga teng; «I'm done» bosilgan bo'lsa, «No coins this
+   time…»), har savol uchun **Your answer** (nima deyilgani, yozib olingan ovoz va necha soniya gapirilgani) va
+   **🤖 AI feedback** (qisqa xulosa; Grammar, Vocabulary, Fluency, Pronunciation; «Try saying» — yaxshiroq javob).
+   **Try again** va **Back to lesson** tugmalari bor. Mashq tugagach set «practised» bo'ladi.
+
+**AI feedback qanday ishlaydi** (`speaking/ai.py`). Ikki xizmatdan biri ishlatiladi, qaysi biri ekanini `.env` dagi
+kalit hal qiladi:
+
+- **Groq — bepul** (karta kerak emas). Yozib olingan ovozni server o'zi **Whisper** bilan matnga aylantiradi
+  (har qanday brauzerda ishlaydi, «um», «uh» lar ham yoziladi), so'ng `openai/gpt-oss-120b` modeli shu matnga fikr
+  yozadi.
+- **Claude — pullik.** Uning kaliti bo'lsa, fikrni Claude yozadi (Groq kaliti ham bo'lsa, ovozni baribir Groq matnga
+  aylantiradi).
+
+Til modellari ovozni eshitmaydi: ular matnni (savol, necha soniya gapirilgani va tanib olish aniqligi bilan)
+o'qiydi. Shu sababli **talaffuz** faqat tanib olish aniqligi va noto'g'ri eshitilgan so'zlardan taxmin qilinadi.
+Groq kaliti bo'lmasa, matnni brauzer tayyorlaydi (`SpeechRecognition`, faqat Chrome / Edge).
+
+**Groq kalitini olish (bepul):** https://console.groq.com ga kiring (Google, GitHub yoki email bilan) →
+**API Keys → Create API Key** → nom bering va kalitni (`gsk_...`) nusxalang (u faqat bir marta ko'rsatiladi) →
+`.env` ga yozing va `docker compose up -d` qiling (konteyner `.env` ni faqat qayta yaratilganda o'qiydi):
+
+```
+GROQ_API_KEY=gsk_...                        # https://console.groq.com → API Keys (bepul)
+GROQ_MODEL=openai/gpt-oss-120b              # ixtiyoriy; javobni JSON schema bo'yicha bera oladigan model
+GROQ_TRANSCRIPTION_MODEL=whisper-large-v3   # ixtiyoriy: whisper-large-v3-turbo tezroq
+ANTHROPIC_API_KEY=sk-ant-...                # ixtiyoriy, pullik: https://console.anthropic.com → API keys
+SPEAKING_AI_MODEL=claude-sonnet-5-5         # ixtiyoriy (Claude modeli; arzonrog'i claude-haiku-5-5)
+SPEAKING_FEEDBACK_LANGUAGE=English          # ixtiyoriy: masalan Uzbek («Try saying» doim inglizcha)
+```
+
+Groq'ning bepul tarifi daqiqasiga va kuniga so'rovlar va tokenlar sonini cheklaydi (o'z limitlaringiz:
+console.groq.com → Settings → Limits). Bir vaqtda ko'p o'quvchi tugatsa, ba'zilarida «We could not get the AI
+feedback just now» chiqadi — bir ozdan keyin **Get the feedback again** bosiladi. Ovoz yozuvlari va javob matnlari
+Groq serverlariga yuboriladi. Claude kaliti uchun console.anthropic.com da **Billing** bo'limida balans
+to'ldiriladi (xalqaro Visa / Mastercard kerak), so'ng **API Keys → Create Key**.
+
+Kalit bo'lmasa, mashq va yozib olish baribir ishlaydi; natija sahifasi «The AI feedback is not turned on on this site
+yet» deydi va tugma ko'rsatmaydi (adminga kalitni qayerga yozish kerakligi ko'rinadi). Kalit qo'shilgach o'sha eski
+natija sahifalarida **Get the feedback** tugmasi paydo bo'ladi: u saqlangan yozuvlarni matnga aylantiradi va fikr
+oladi. AI vaqtincha ishlamay qolsa (tarmoq, limit, 529 va h.k.), javoblar saqlanadi va **Get the feedback again**
+tugmasi qayta urinadi (adminga xato matni ham ko'rinadi). Mikrofon faqat `http://localhost` yoki
+`https://` da ishlaydi (boshqa kompyuter yoki telefondan kirish uchun HTTPS kerak); Groq kaliti bo'lmasa, matnga
+aylantirish uchun Chrome yoki Edge kerak (Chrome ovozni Google serveriga yuboradi).
+
+**Mikrofon ruxsati.** «Ready?» sahifasi ochilishi bilan, ruxsat hali berilmagan/rad etilmagan bo'lsa, brauzerning
+o'z oynasi (Allow / Block) avtomatik ochiladi; Allow bosilgach sahifada «✓ The microphone is allowed. Press Start
+when you are ready.» chiqadi. Start bosilganda ham brauzerdan so'raladi. Sabab turiga qarab aniq xabar chiqadi:
+oyna yopilgan («The permission pop-up was closed…»), mikrofon bloklangan (ruxsatni qanday yoqish bosqichlari va
+«I allowed it — check again» tugmasi; brauzer sozlamasida ruxsat berilgani o'zi seziladi), mikrofon topilmadi yoki
+boshqa dastur band qilgan. Brauzer bloklangan ruxsatni sahifadan qayta so'ray olmaydi — faqat sozlamadan yoqiladi.
+Yozib olingan ovozlar `MEDIA_ROOT/speaking/answers/` da saqlanadi va faqat egasiga va adminlarga ko'rinadi;
+bir o'quvchi soatiga ko'pi bilan 30 ta mashq qila oladi (AI xarajatini cheklash uchun).
 
 **Admin paneldan:** `/panel/courses/` → Speaking kursini **Tahrirlash** → **Speaking partlar** → part yonidagi
 **Boshqarish**. Har set uchun savollarni har qatorga bittadan yozing (odatda 3 ta, ko'pi bilan 12 ta). Yangi set

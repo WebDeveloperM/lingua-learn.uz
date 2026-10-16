@@ -4,7 +4,7 @@ from django.test import Client, TestCase
 
 from accounts.models import Role, User
 
-from .models import Category, Course, Exercise, ExerciseResult, Part
+from .models import Category, Course, Exercise, ExerciseResult, KeyWord, Part
 from .support import EXPECTED_PARTS, TOTAL_EXERCISES, seed
 
 
@@ -28,7 +28,7 @@ class SeedListeningPartsTests(TestCase):
         seed()
         parts = list(self.course.parts.all())
         self.assertEqual([(p.number, p.name, p.exercises.count()) for p in parts], EXPECTED_PARTS)
-        self.assertEqual({p.key_words_count for p in parts}, {50})
+        self.assertFalse(KeyWord.objects.exists())  # the words of a Part are typed by an admin, never invented
         self.assertEqual([p.icon for p in parts], ['💬', '✍️', '🗣️', '🗺️', '🎙️', '🧑‍🏫'])
 
     def test_rerun_is_idempotent(self):
@@ -41,13 +41,13 @@ class SeedListeningPartsTests(TestCase):
         seed()
         part = Part.objects.get(number=1)
         part.name = 'Renamed in admin'
-        part.key_words_count = 12
+        part.icon = '🎯'
         part.save()
         Exercise.objects.filter(part=part, number=3).delete()
 
         seed()
         part.refresh_from_db()
-        self.assertEqual((part.name, part.key_words_count), ('Renamed in admin', 12))
+        self.assertEqual((part.name, part.icon), ('Renamed in admin', '🎯'))
         self.assertEqual(part.exercises.count(), 10)
 
     def test_course_can_be_chosen_by_slug(self):
@@ -101,7 +101,7 @@ class PracticePageTests(TestCase):
         for number, name, count in EXPECTED_PARTS:
             self.assertContains(response, f'Part {number} · {name}')
             self.assertContains(response, f'{count} ready')
-        self.assertContains(response, 'Key vocabulary · 50 words', count=6)
+        self.assertNotContains(response, 'Key vocabulary')  # no words typed yet: no button that opens nothing
         self.assertContains(response, 'class="ex-tile', count=TOTAL_EXERCISES)
 
     def test_tiles_have_no_free_or_paid_labels(self):

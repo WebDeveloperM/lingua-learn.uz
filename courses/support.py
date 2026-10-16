@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.test import override_settings
 
-from .models import Exercise, Question
+from .models import Exercise, KeyWord, Question
 
 EXPECTED_PARTS = [
     (1, 'Short replies', 10),
@@ -26,6 +26,11 @@ def seed(**options):
 
 def seed_reading(**options):
     call_command('seed_reading_parts', stdout=StringIO(), **options)
+
+
+def make_key_words(part, entries):
+    """Give a Part its key words (dicts with word, transcription, meaning and example), in the order given."""
+    return [KeyWord.objects.create(part=part, order=order, **entry) for order, entry in enumerate(entries)]
 
 
 def make_wav(seconds=1, rate=8000):

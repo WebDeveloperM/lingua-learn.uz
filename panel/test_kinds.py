@@ -45,7 +45,7 @@ class PartKindFormTests(PanelTestCase):
 
     def part_data(self, **overrides):
         return {'number': 2, 'name': 'Gap filling', 'icon': '✍️', 'kind': 'gap_fill', 'first_question_number': 9,
-                'key_words_count': 50, 'instructions': '', **overrides}
+                'instructions': '', **overrides}
 
     def test_first_part_suggests_question_one(self):
         response = self.client.get(reverse('panel:part_create', args=[self.course1.pk]))

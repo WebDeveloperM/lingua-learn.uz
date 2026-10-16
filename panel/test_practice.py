@@ -75,7 +75,7 @@ class PartManagementTests(TempMediaMixin, PanelTestCase):
 
     def part_data(self, **overrides):
         return {'number': 1, 'name': 'Short replies', 'icon': '💬', 'kind': 'choice', 'first_question_number': 1,
-                'key_words_count': 50, 'instructions': 'Listen **twice**.', **overrides}
+                'instructions': 'Listen **twice**.', **overrides}
 
     def test_new_part_form_suggests_the_next_number(self):
         Part.objects.create(course=self.course1, number=1, name='One')
@@ -88,7 +88,7 @@ class PartManagementTests(TempMediaMixin, PanelTestCase):
         response = self.client.post(reverse('panel:part_create', args=[self.course1.pk]), self.part_data())
         part = Part.objects.get(course=self.course1)
         self.assertRedirects(response, reverse('panel:part_edit', args=[part.pk]))
-        self.assertEqual((part.number, part.name, part.icon, part.key_words_count), (1, 'Short replies', '💬', 50))
+        self.assertEqual((part.number, part.name, part.icon), (1, 'Short replies', '💬'))
         self.assertEqual(part.instructions, 'Listen **twice**.')
 
     def test_part_numbers_are_unique_within_a_course_only(self):
@@ -114,10 +114,10 @@ class PartManagementTests(TempMediaMixin, PanelTestCase):
     def test_edit_part_and_keep_its_own_number(self):
         part = Part.objects.create(course=self.course1, number=2, name='Old')
         url = reverse('panel:part_edit', args=[part.pk])
-        response = self.client.post(url, self.part_data(number=2, name='New name', key_words_count=0))
+        response = self.client.post(url, self.part_data(number=2, name='New name'))
         self.assertRedirects(response, url)
         part.refresh_from_db()
-        self.assertEqual((part.number, part.name, part.key_words_count), (2, 'New name', 0))
+        self.assertEqual((part.number, part.name), (2, 'New name'))
 
     def test_part_page_lists_exercises_with_their_status(self):
         part = Part.objects.create(course=self.course1, number=1, name='One')

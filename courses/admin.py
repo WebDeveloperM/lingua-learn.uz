@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Course, Enrollment, Exercise, LearningOutcome, Part, SkillTag
+from .models import Course, Enrollment, Exercise, KeyWord, LearningOutcome, Part, SkillTag
 
 
 class ExerciseInline(admin.TabularInline):
@@ -8,11 +8,20 @@ class ExerciseInline(admin.TabularInline):
     extra = 0
 
 
+class KeyWordInline(admin.TabularInline):
+    model = KeyWord
+    extra = 0
+
+
 @admin.register(Part)
 class PartAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'course', 'key_words_count')
+    list_display = ('__str__', 'course', 'key_words')
     list_filter = ('course',)
-    inlines = [ExerciseInline]
+    inlines = [KeyWordInline, ExerciseInline]
+
+    @admin.display(description='Key vocabulary')
+    def key_words(self, part):
+        return part.key_words.count()
 
 
 class LearningOutcomeInline(admin.TabularInline):

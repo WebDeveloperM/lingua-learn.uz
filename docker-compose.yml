@@ -2,13 +2,16 @@ services:
   web:
     build: .
     image: english-project
-    ports:
-      - "8000:8000"
+    # No "ports" here: the https service below owns port 8000 (it hands plain http on to this service, and
+    # understands https on the same port too), so http://localhost:8000 and https://<this computer>:8000 both work.
     env_file: .env
     environment:
       ALLOWED_HOSTS: localhost,127.0.0.1
       DB_PATH: /data/db.sqlite3
       MEDIA_ROOT: /data/media
+      # The port of the https address (the "https" service below). Browsers give the microphone only to https pages,
+      # so the Speaking practice sends visitors of the plain-http address to https://<same address>:<this port>.
+      HTTPS_PORT: ${HTTPS_PORT:-8443}
     volumes:
       - app_data:/data
     restart: unless-stopped
@@ -20,5 +23,27 @@ services:
         - action: rebuild
           path: requirements.txt
 
+  # nginx in front of the web service, with a certificate authority of its own:
+  #   port 8000: plain http (-> web) and https (a TLS handshake on the same port), told apart by the first bytes
+  #   port 8443: https only
+  # The first time a browser shows a certificate warning: Advanced -> Continue. To remove it for good, install the
+  # authority on the device (it is offered at https://<this computer>:8443/local-ca.crt), see README.md.
+  https:
+    build: ./docker/https
+    image: english-project-https
+    depends_on:
+      - web
+    ports:
+      - "8000:8000"
+      - "${HTTPS_PORT:-8443}:8443"
+    environment:
+      # The addresses and names people open the site at, besides localhost: the certificate is made for them.
+      # When this computer's address changes, put the new one in .env (HTTPS_HOSTS=a,b) and run docker compose up -d.
+      HTTPS_HOSTS: ${HTTPS_HOSTS:-192.168.2.72}
+    volumes:
+      - https_certs:/certs
+    restart: unless-stopped
+
 volumes:
   app_data:
+  https_certs:

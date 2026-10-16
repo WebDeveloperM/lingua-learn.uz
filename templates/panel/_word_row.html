@@ -1,0 +1,16 @@
+<div class="kw-row" data-row {% if f.DELETE.value %}hidden{% endif %}>
+    {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+    <span class="kw-num" aria-hidden="true"></span>
+    <div class="kw-word">{{ f.word }}</div>
+    <div class="kw-ipa">{{ f.transcription }}</div>
+    <div class="kw-meaning">{{ f.meaning }}</div>
+    <div class="kw-example">{{ f.example }}</div>
+    <span class="row-delete">{{ f.DELETE }}</span>
+    <button type="button" class="icon-btn kw-del" data-remove tabindex="-1" aria-label="So'zni olib tashlash">×</button>
+    {% if f.errors %}
+    <div class="form-errors kw-errors">
+        {% for field in f.visible_fields %}{{ field.errors }}{% endfor %}
+        {{ f.non_field_errors }}
+    </div>
+    {% endif %}
+</div>

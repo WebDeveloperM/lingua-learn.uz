@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Learn English — Onlayn ingliz tili kurslari{% endblock %}
 
@@ -21,7 +22,10 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="home-hero-art">📚</div>
+        <div class="home-hero-art">
+            <img src="{% static 'img/main.png' %}" width="1280" height="720"
+                 alt="Quloqchin taqqan o'quvchi kompyuterda sun'iy intellekt o'qituvchi bilan ingliz tilini o'rganmoqda">
+        </div>
     </div>
 </section>
 

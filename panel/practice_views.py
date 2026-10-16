@@ -5,13 +5,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from courses.models import Course, Exercise, Part, Question
+from courses.models import Course, Exercise, KeyWord, Part, Question
 from courses.passages import passage_answers, sync_passage_questions
+from courses.vocabulary import MAX_WORDS
 
 from .decorators import admin_required
-from .forms import ExerciseContentForm, PartForm, letter_problem, question_formset_class
+from .forms import (
+    BulkWordsForm, ExerciseContentForm, PartForm, key_word_formset_class, letter_problem, question_formset_class,
+)
 from .utils import save_ordered
 
+NEW_WORD_ROWS = 5  # the rows a Part without words opens its vocabulary editor with
+WORD_PREVIEW = 12  # how many words the Part page lists under "Key vocabulary"
 
 ROW_TEMPLATES = {
     Part.Kind.CHOICE: 'panel/_question_row.html',
@@ -56,14 +61,62 @@ def _part_form_view(request, course, part=None):
         form = PartForm(instance=part, course=course, initial=initial)
 
     exercises = []
+    word_total, word_preview = 0, []
     if part:
         queryset = Exercise.objects.filter(part=part).select_related('part__course').annotate(questions_total=Count('questions'))
         exercises = list(queryset)
+        word_total = part.key_words.count()
+        word_preview = list(part.key_words.values_list('word', flat=True)[:WORD_PREVIEW])
     return render(request, 'panel/part_form.html', {
         'form': form,
         'course': course,
         'part': part,
         'exercises': exercises,
+        'word_total': word_total,
+        'word_preview': word_preview,
+        'word_more': word_total - len(word_preview),
+    })
+
+
+@admin_required
+def part_words(request, pk):
+    """The key vocabulary of a Part: one row per word, "+ So'z qo'shish" for another, and a box to paste many at once."""
+    part = get_object_or_404(Part.objects.select_related('course'), pk=pk)
+    course = part.course
+    existing = part.key_words.count()
+    # a Part without words opens with a few rows to type in; one with words gets a single spare row after them
+    words_class = key_word_formset_class(1 if existing else NEW_WORD_ROWS)
+    options = {'instance': part, 'prefix': 'words', 'queryset': part.key_words.all()}
+
+    if request.method == 'POST':
+        words = words_class(request.POST, **options)
+        bulk = BulkWordsForm(request.POST)
+        rows_ok, bulk_ok = words.is_valid(), bulk.is_valid()
+        entries = bulk.cleaned_data['bulk'] if bulk_ok else []
+        if rows_ok and bulk_ok and words.kept_count() + len(entries) > MAX_WORDS:
+            bulk.add_error('bulk', f"Bitta Part'da {MAX_WORDS} tadan ko'p so'z bo'lmaydi: ro'yxatdagi so'zlar bilan "
+                                   f"birga {words.kept_count() + len(entries)} ta bo'lib qoladi.")
+            bulk_ok = False
+        if rows_ok and bulk_ok:
+            with transaction.atomic():
+                save_ordered(words, part=part)
+                first = part.key_words.count()
+                for offset, entry in enumerate(entries):
+                    KeyWord.objects.create(part=part, order=first + offset, **entry)
+                total = part.key_words.count()
+            messages.success(request, f"So'zlar saqlandi: Part {part.number} da jami {total} ta so'z.")
+            return redirect('panel:part_words', pk=part.pk)
+    else:
+        words = words_class(**options)
+        bulk = BulkWordsForm()
+
+    return render(request, 'panel/part_words.html', {
+        'words': words,
+        'bulk': bulk,
+        'part': part,
+        'course': course,
+        'word_total': existing,
+        'student_url': f'{course.get_absolute_url()}#part-{part.number}',
     })
 
 

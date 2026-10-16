@@ -24,6 +24,7 @@ urlpatterns = [
     path('courses/<int:course_pk>/parts/new/', practice_views.part_create, name='part_create'),
     path('parts/<int:pk>/', practice_views.part_edit, name='part_edit'),
     path('parts/<int:pk>/delete/', practice_views.part_delete, name='part_delete'),
+    path('parts/<int:pk>/words/', practice_views.part_words, name='part_words'),
     path('parts/<int:pk>/exercises/add/', practice_views.exercise_add, name='exercise_add'),
     path('exercises/<int:pk>/edit/', practice_views.exercise_edit, name='exercise_edit'),
     path('exercises/<int:pk>/delete/', practice_views.exercise_delete, name='exercise_delete'),

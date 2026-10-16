@@ -20,10 +20,10 @@ def _read_range(path, start, length):
             yield chunk
 
 
-def file_response_with_range(request, path):
+def file_response_with_range(request, path, content_type=None):
     """Serve a file honouring a single-range `Range` header, so browsers can seek inside audio."""
     size = os.path.getsize(path)
-    content_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+    content_type = content_type or mimetypes.guess_type(path)[0] or 'application/octet-stream'
     match = RANGE_RE.match(request.headers.get('Range', '').strip())
 
     if not match or match.groups() == ('', ''):

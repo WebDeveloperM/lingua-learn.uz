@@ -7,5 +7,6 @@ db.sqlite3
 staticfiles/
 media/
 .env
+docker/
 .vscode/
 .idea/

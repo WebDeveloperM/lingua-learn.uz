@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ course.get_category_display }} practice | Learn English{% endblock %}
 
@@ -31,12 +32,33 @@
                     </li>
                     {% endfor %}
                 </ul>
-                {% if part.key_words_count %}
-                <span class="vocab-pill">📚 Key vocabulary · {{ part.key_words_count }} words</span>
+                {% if part.key_word_list %}
+                {% with total=part.key_word_list|length %}
+                <details class="vocab">
+                    <summary class="vocab-pill">
+                        <span class="vocab-when-closed"><span aria-hidden="true">📚</span> Key vocabulary · {{ total }} word{{ total|pluralize }}</span>
+                        <span class="vocab-when-open"><span aria-hidden="true">📖</span> Hide vocabulary · {{ total }} word{{ total|pluralize }}</span>
+                    </summary>
+                    <div class="vocab-body">
+                        <input type="search" class="vocab-search" placeholder="Search a word, Uzbek meaning or example…" aria-label="Search the key vocabulary of Part {{ part.number }}" autocomplete="off" spellcheck="false" hidden>
+                        <p class="vocab-status" role="status" aria-live="polite"></p>
+                        <ul class="vocab-grid">
+                            {% for word in part.key_word_list %}
+                            <li class="vocab-card">
+                                <p class="vocab-word"><strong>{{ word.word }}</strong>{% if word.transcription %} <span class="vocab-ipa">/{{ word.transcription }}/</span>{% endif %}</p>
+                                <p class="vocab-meaning">{{ word.meaning }}</p>
+                                {% if word.example %}<p class="vocab-example">{{ word.example }}</p>{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </details>
+                {% endwith %}
                 {% endif %}
             </section>
             {% endfor %}
         </div>
     </div>
 </section>
+{% if has_vocabulary %}<script src="{% static 'js/vocabulary.js' %}" defer></script>{% endif %}
 {% endblock %}
