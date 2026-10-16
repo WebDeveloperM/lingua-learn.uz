@@ -4,7 +4,7 @@ Django settings for config project.
 
 import os
 from pathlib import Path
-
+from decouple import config
 import dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,7 +19,7 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["https://lingua-learn.uz/", "lingua-learn.uz"]
 
 # Application definition
 
@@ -71,13 +71,24 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('DB_PATH', BASE_DIR / 'db.sqlite3'),
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.environ.get('DB_PATH', BASE_DIR / 'db.sqlite3'),
+#     }
+# }
 
+
+DATABASES = {
+     'default': {
+         'ENGINE': 'django.db.backends.mysql',
+         'NAME': config('DATABASE_NAME'),
+         'USER': config('DATABASE_USER'),
+         'PASSWORD': config('DATABASE_PASSWORD'),
+         'HOST': config('DATABASE_HOST', default='localhost'),
+         'PORT': config('DATABASE_PORT', default='5432', cast=int),
+     }
+ }
 
 # Custom user model
 
@@ -121,7 +132,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (uploaded course images, certificates, etc.)
 MEDIA_URL = 'media/'
-MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
+# MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
+MEDIA_ROOT = '/home/linguale/public_html/backmanager/media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
