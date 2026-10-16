@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.get_category_display }} practice | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="practice-wrap">
+            <h1 class="practice-title">{{ course.icon }} {{ course.get_category_display }} practice</h1>
+            <p class="practice-intro">Choose a part, then practise a set out loud.</p>
+
+            <section class="sp-score" aria-labelledby="sp-score-title">
+                <h2 class="sp-score-title" id="sp-score-title"><span aria-hidden="true">📊</span> How you are scored <small>· Baholash tartibi</small></h2>
+                <ul class="sp-score-grid">
+                    {% for item in scoring %}
+                    <li><strong>{{ item.percent }}%</strong><span><span aria-hidden="true">{{ item.icon }}</span> {{ item.name }}</span></li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <ul class="sp-parts">
+                {% for part in parts %}
+                <li>
+                    <a class="sp-part" href="{% url 'speaking:part' course.slug part.number %}">
+                        <span class="sp-part-icon" aria-hidden="true">{{ part.icon }}</span>
+                        <span class="sp-part-body">
+                            <strong class="sp-part-name">{{ part.label }}</strong>
+                            <span class="sp-part-tagline">{{ part.tagline }}</span>
+                            <span class="sp-part-details">{{ part.details }}</span>
+                            {% if part.sets_total %}
+                            <span class="sp-badge{% if part.practised %} is-done{% endif %}">{% if part.practised %}✓ {% endif %}{{ part.practised }} / {{ part.sets_total }} practised</span>
+                            {% else %}
+                            <span class="sp-badge is-empty">No sets yet</span>
+                            {% endif %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}

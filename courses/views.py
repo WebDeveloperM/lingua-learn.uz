@@ -7,6 +7,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from speaking.views import speaking_hub
 from writing.views import writing_hub
 
 from .access import visible_course
@@ -78,6 +79,8 @@ def course_detail(request, slug):
 
     if course.category == Category.WRITING:
         return writing_hub(request, course)
+    if course.category == Category.SPEAKING:
+        return speaking_hub(request, course)
 
     parts = _practice_parts(course, request.user)
     if parts:

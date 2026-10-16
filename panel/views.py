@@ -15,6 +15,7 @@ from writing.models import WritingSubmission
 
 from .decorators import admin_required
 from .forms import CourseForm, LearningOutcomeFormSet, ProgressForm, SkillTagFormSet
+from .speaking_views import speaking_part_rows
 from .stats import student_leaderboard, students_with_stats
 from .utils import save_ordered
 
@@ -240,6 +241,8 @@ def _course_form_view(request, course=None):
             task_count=Count('tasks', distinct=True), submission_count=Count('submissions', distinct=True),
         )
         context['submissions_count'] = WritingSubmission.objects.filter(test__course=course).count()
+    if course and course.category == Category.SPEAKING:
+        context['speaking_parts'] = speaking_part_rows(course)
     return render(request, 'panel/course_form.html', context)
 
 

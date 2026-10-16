@@ -27,7 +27,7 @@
             <a href="{% url 'panel:rating' %}" class="{% if current == 'rating' %}active{% endif %}">
                 <span class="nav-icon">🏆</span> Reyting
             </a>
-            <a href="{% url 'panel:course_list' %}" class="{% if current == 'course_list' or current == 'course_edit' or current == 'part_create' or current == 'part_edit' or current == 'exercise_edit' or current == 'writing_test_create' or current == 'writing_test_edit' or current == 'writing_submissions' or current == 'writing_submission' %}active{% endif %}">
+            <a href="{% url 'panel:course_list' %}" class="{% if current == 'course_list' or current == 'course_edit' or current == 'part_create' or current == 'part_edit' or current == 'exercise_edit' or current == 'writing_test_create' or current == 'writing_test_edit' or current == 'writing_submissions' or current == 'writing_submission' or current == 'speaking_part' %}active{% endif %}">
                 <span class="nav-icon">📚</span> Kurslar
             </a>
             <a href="{% url 'panel:course_create' %}" class="{% if current == 'course_create' %}active{% endif %}">

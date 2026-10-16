@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ course.get_category_display }} · {{ part.label }} · {{ set.title }} | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{% url 'speaking:part' course.slug part.number %}">← {{ part.label }}</a>
+            <h1 class="exercise-title"><span aria-hidden="true">{{ part.icon }}</span> {{ part.label }} · {{ set.title }}</h1>
+
+            <section class="ready-card">
+                <h2>Ready? <span aria-hidden="true">🎙️</span></h2>
+                <p class="ready-meta">{{ questions }} · about <strong>{{ duration }}</strong>.</p>
+                <ul class="sp-rules">
+                    <li>Each question is read aloud, then you get time to prepare.</li>
+                    <li>After the beep, speak until the timer ends. Press <strong>I'm done</strong> to finish early.</li>
+                    <li><span aria-hidden="true">🪙</span> You get <strong>{{ coins }} coin{{ coins|pluralize }}</strong> only if you speak until the timer ends for every question.</li>
+                    <li>Find a quiet place and speak out loud, like in the real exam.</li>
+                </ul>
+                <label class="sp-check"><input type="checkbox" id="read-aloud" checked> <span>Read the questions aloud</span></label>
+                <button type="button" class="btn btn-primary btn-lg start-btn" id="start-btn" disabled><span aria-hidden="true">▶</span> Start</button>
+                <p class="not-ready-note">The speaking session itself is coming soon.</p>
+            </section>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/speaking.js' %}" defer></script>
+{% endblock %}

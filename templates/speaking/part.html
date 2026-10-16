@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ course.get_category_display }} · {{ part.label }} | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{{ course.get_absolute_url }}">← {{ course.get_category_display }} practice</a>
+            <h1 class="exercise-title"><span aria-hidden="true">{{ part.icon }}</span> {{ part.label }} <small class="wt-title-meta">· {{ part.tagline }}</small></h1>
+            <p class="sp-lead">{{ part.details }}</p>
+
+            <section class="sp-sets" aria-labelledby="sp-sets-title">
+                <h2 class="sp-sets-title" id="sp-sets-title"><span aria-hidden="true">❓</span> Practice questions</h2>
+                {% for speaking_set in sets %}
+                <div class="sp-set">
+                    <h3 class="sp-set-name">{{ speaking_set.title }}</h3>
+                    <ol class="sp-questions">
+                        {% for question in speaking_set.question_list %}
+                        <li>
+                            <span>{{ question.text }}</span>
+                            <button type="button" class="sp-listen" data-speak="{{ question.text }}" aria-label="Listen to question {{ forloop.counter }}" title="Listen">🔊</button>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    <a class="pill-btn is-primary sp-practise" href="{% url 'speaking:ready' course.slug part.number speaking_set.pk %}"><span aria-hidden="true">🎙️</span> Practise this{% if speaking_set.is_practised %} again ✓{% endif %}</a>
+                </div>
+                {% empty %}
+                <p class="empty-note">No practice questions yet.</p>
+                {% endfor %}
+            </section>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/speaking.js' %}" defer></script>
+{% endblock %}

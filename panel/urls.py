@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import practice_views, views, writing_views
+from . import practice_views, speaking_views, views, writing_views
 
 app_name = 'panel'
 
@@ -33,4 +33,6 @@ urlpatterns = [
     path('writing/<int:pk>/', writing_views.writing_test_edit, name='writing_test_edit'),
     path('writing/<int:pk>/delete/', writing_views.writing_test_delete, name='writing_test_delete'),
     path('writing/submissions/<int:pk>/', writing_views.writing_submission, name='writing_submission'),
+
+    path('courses/<int:course_pk>/speaking/<int:part>/', speaking_views.speaking_part, name='speaking_part'),
 ]

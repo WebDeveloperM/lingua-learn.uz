@@ -1,0 +1,48 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{{ course.get_category_display }} · {{ part.label }}{% endblock %}
+{% block page_title %}{{ course.get_category_display }} · {{ part.label }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:course_edit' course.pk %}#practice" class="back-link">← {{ course.title }}</a>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}<div class="alert alert-error">{{ formset.non_form_errors }}</div>{% endif %}
+
+    <div class="form-layout">
+        <div class="form-main">
+            <section class="panel-card">
+                <header class="card-head"><h2>{{ part.icon }} {{ part.label }} <small class="muted-sm">· {{ part.tagline }}</small></h2></header>
+                <p class="muted-sm" style="margin-top:-6px;">
+                    Set — o'quvchi bir marta mashq qiladigan savollar to'plami (odatda 3 ta savol). Savollarni har qatorga bittadan yozing.
+                    Savolsiz set o'quvchiga ko'rinmaydi. Yangi set qo'shish uchun pastdagi bo'sh «Yangi set» maydonini to'ldiring.
+                </p>
+            </section>
+
+            {% for form in formset %}
+            <section class="panel-card">
+                <header class="card-head">
+                    <h2>{% if form.set_title %}{{ form.set_title }}{% else %}Yangi set <small class="muted-sm">· {{ next_title }}</small>{% endif %}</h2>
+                </header>
+                {{ form.set_id }}
+                {% include "panel/_field.html" with field=form.questions %}
+                {% if form.set_title %}{% include "panel/_field.html" with field=form.delete %}{% endif %}
+            </section>
+            {% endfor %}
+        </div>
+
+        <aside class="form-side">
+            <section class="panel-card">
+                <header class="card-head"><h2>Part</h2></header>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                    <a href="{{ student_url }}" target="_blank" rel="noopener" class="btn btn-ghost">O'quvchi ko'rinishi ↗</a>
+                    <a href="{% url 'panel:course_edit' course.pk %}#practice" class="btn btn-ghost">Orqaga</a>
+                </div>
+            </section>
+        </aside>
+    </div>
+</form>
+{% endblock %}

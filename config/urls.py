@@ -8,6 +8,7 @@ urlpatterns = [
     path('panel/', include('panel.urls')),
     path('accounts/', include('accounts.urls')),
     path('courses/<slug:slug>/writing/', include('writing.urls')),
+    path('courses/<slug:slug>/speaking/', include('speaking.urls')),
     path('courses/', include('courses.urls')),
     path('', include('core.urls')),
 ]
