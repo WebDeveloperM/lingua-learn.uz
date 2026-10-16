@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Learn English — Onlayn ingliz tili kurslari{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+    <div class="container home-hero-grid">
+        <div>
+            <span class="level-badge">🚀 BEPUL ONLAYN KURSLAR</span>
+            <h1>Ingliz tilini <span style="color:var(--green)">nol</span>dan mukammal darajagacha o'rganing</h1>
+            <p>Grammatika, lug'at, reading, writing, speaking va listening — barcha skilllarni bir platformada, sertifikat bilan o'rganing.</p>
+            <div class="hero-actions">
+                <a href="{% url 'courses:course_list' %}" class="btn btn-primary btn-lg">Kurslarni ko'rish</a>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'accounts:register' %}" class="btn btn-outline btn-lg">Ro'yxatdan o'tish</a>
+                {% endif %}
+            </div>
+            <div class="skills-showcase">
+                {% for value, label in categories %}
+                    <span>{{ label }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="home-hero-art">📚</div>
+    </div>
+</section>
+
+<section class="practice-section">
+    <div class="container">
+        <div class="home-section-head">
+            <h2>Tavsiya etilgan kurslar</h2>
+            <p>Eng ko'p tanlangan kurslar bilan tanishing</p>
+        </div>
+
+        {% if featured_courses %}
+        <div class="course-grid">
+            {% for course in featured_courses %}
+                {% include "courses/_course_card.html" %}
+            {% endfor %}
+        </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Hozircha kurslar qo'shilmagan. Admin panel orqali birinchi kursni qo'shing.</p>
+            </div>
+        {% endif %}
+
+        <div style="text-align:center; margin-top:10px;">
+            <a href="{% url 'courses:course_list' %}" class="btn btn-outline">Barcha kurslarni ko'rish</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static practice_tags %}
+
+{% block title %}{{ course.get_category_display }} · Part {{ part.number }} · Exercise {{ exercise.number }} | Learn English{% endblock %}
+
+{% block content %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <h1 class="exercise-title">{{ course.get_category_display }} · Part {{ part.number }} · Exercise {{ exercise.number }}</h1>
+
+            <form method="post" id="exercise-form" data-duration="{{ duration_seconds }}"
+                  action="{% url 'courses:exercise_submit' course.slug part.number exercise.number %}">
+                {% csrf_token %}
+                <input type="hidden" name="time_used" id="time-used" value="">
+
+                <div class="exercise-bar">
+                    <span class="timer-pill" id="timer-pill"><span aria-hidden="true">⏱</span> <span id="timer-label">{{ timer_label }}</span></span>
+                    <button type="button" class="pill-btn" id="pause-btn">⏸ Pause</button>
+                </div>
+                <p class="paused-note" id="paused-note" hidden>⏸ Paused — the timer and the audio are stopped. Press Resume to continue.</p>
+
+                <div class="exercise-body" id="exercise-body">
+                    <section class="ex-card">
+                        <h2 class="ex-card-title">{{ part.icon }} Part {{ part.number }}</h2>
+                        {% include "courses/_exercise_head.html" %}
+
+                        {% if part.kind == 'gap_fill' %}
+                        <div class="gap-list">
+                            {% for question in questions %}
+                            {% if question.intro %}<p class="gap-note">{{ question.intro|inline_bold }}</p>{% endif %}
+                            <p class="gap-line">
+                                {% if question.text %}<strong class="gap-label">{{ question.text }}</strong>{% endif %}
+                                {% if question.text_before %}<span class="gap-text">{{ question.text_before }}</span>{% endif %}
+                                <span class="gap-number">{{ question.number }}</span>
+                                <input type="text" class="gap-input" name="q{{ question.pk }}" maxlength="80"
+                                       autocomplete="off" autocapitalize="off" spellcheck="false"
+                                       aria-label="Question {{ question.number }}">
+                                {% if question.text_after %}<span class="gap-text">{{ question.text_after }}</span>{% endif %}
+                            </p>
+                            {% endfor %}
+                        </div>
+                        {% elif part.kind == 'passage_gap' or part.kind == 'passage_mixed' %}
+                        <div class="passage">
+                            {% for paragraph in passage_blocks %}
+                            <p class="passage-p">{% for piece in paragraph %}{% if piece.item %}<span class="gap-ref">(Q{{ piece.item.number }})</span> <span class="gap-number">{{ piece.item.number }}</span> <input type="text" class="gap-input" name="q{{ piece.item.pk }}" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Question {{ piece.item.number }}">{% else %}{{ piece.text|linebreaksbr }}{% endif %}{% endfor %}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    {% if part.kind == 'choice' or part.kind == 'passage_mixed' %}
+                        {% for question in choice_questions %}
+                        {% if question.intro %}<section class="q-intro"><p>{{ question.intro|inline_bold }}</p></section>{% endif %}
+                        <section class="q-card">
+                            <p class="q-line"><strong class="q-number">{{ question.number }}.</strong> {{ question.text }}</p>
+                            <div class="q-options">
+                                {% for letter, text in question.options %}
+                                <label class="q-option">
+                                    <input type="radio" name="q{{ question.pk }}" value="{{ letter }}">
+                                    <span class="q-letter">{{ letter|upper }}</span>
+                                    <span class="q-label">{{ text }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </section>
+                        {% endfor %}
+                    {% elif part.kind == 'matching' %}
+                        {% for question in questions %}
+                        <section class="q-card">
+                            {% include "courses/_match_question.html" with number=question.number %}
+                            <select class="match-select" name="q{{ question.pk }}" aria-label="Question {{ question.number }}">
+                                <option value="">Choose an answer...</option>
+                                {% for letter, text in option_list %}
+                                <option value="{{ letter }}">{{ letter|upper }}) {{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </section>
+                        {% endfor %}
+                    {% elif part.kind == 'map' %}
+                        {% for question in questions %}
+                        <section class="q-card">
+                            <p class="q-line"><strong>{{ question.number }}.</strong> {{ question.text }}</p>
+                            <div class="chip-row" role="radiogroup" aria-label="Question {{ question.number }}">
+                                {% for letter, text in option_list %}
+                                <label class="chip">
+                                    <input type="radio" name="q{{ question.pk }}" value="{{ letter }}">
+                                    <span>{{ letter|upper }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </section>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="exercise-submit">
+                        <button type="submit" class="btn btn-primary btn-lg start-btn" id="submit-btn">Submit all parts</button>
+                        <div class="submit-confirm" id="submit-confirm" role="alert" hidden>
+                            <p id="submit-confirm-text"></p>
+                            <div class="submit-confirm-actions">
+                                <button type="button" class="pill-btn is-primary" id="confirm-yes">Yes, submit</button>
+                                <button type="button" class="pill-btn" id="confirm-no">Keep working</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/audio-player.js' %}" defer></script>
+<script src="{% static 'js/exercise.js' %}" defer></script>
+{% endblock %}

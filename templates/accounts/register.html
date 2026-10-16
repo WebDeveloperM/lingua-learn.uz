@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Ro'yxatdan o'tish | Learn English{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-wrap">
+        <h1>Ro'yxatdan o'tish</h1>
+        <p class="sub">Ma'lumotlaringizni kiriting. Ro'yxatdan o'tgach, akkountingiz admin tomonidan faollashtiriladi.</p>
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">Ism</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}<div class="form-errors">{{ form.first_name.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">Familiya</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}<div class="form-errors">{{ form.last_name.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.birth_date.id_for_label }}">Tug'ilgan kun</label>
+                {{ form.birth_date }}
+                {% if form.birth_date.errors %}<div class="form-errors">{{ form.birth_date.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="form-errors">{{ form.email.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.password1.id_for_label }}">Parol</label>
+                    <div class="password-field">
+                        {{ form.password1 }}
+                        {% include "accounts/_password_toggle.html" %}
+                    </div>
+                    {% if form.password1.errors %}<div class="form-errors">{{ form.password1.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.password2.id_for_label }}">Parolni takrorlang</label>
+                    <div class="password-field">
+                        {{ form.password2 }}
+                        {% include "accounts/_password_toggle.html" %}
+                    </div>
+                    {% if form.password2.errors %}<div class="form-errors">{{ form.password2.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Ro'yxatdan o'tish</button>
+        </form>
+
+        <div class="auth-footer-link">
+            Akkountingiz bormi? <a href="{% url 'accounts:login' %}">Kirish</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

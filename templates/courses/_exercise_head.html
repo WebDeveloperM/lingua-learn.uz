@@ -1,0 +1,33 @@
+{% load practice_tags %}
+{% if part.needs_audio %}
+<div class="audio-box">
+    <p class="audio-hint">🎧 <strong>Listen</strong> and answer the questions below.</p>
+    <div class="audio-player" data-audio-player>
+        <audio preload="metadata" src="{% url 'courses:exercise_audio' exercise.pk %}"></audio>
+        <button type="button" class="play-btn" aria-label="Play audio">▶</button>
+        <input type="range" class="audio-range" min="0" max="1000" value="0" aria-label="Audio position">
+        <span class="audio-time">0:00</span>
+    </div>
+</div>
+{% endif %}
+{% with instructions=exercise.effective_instructions %}
+{% if instructions %}
+<p class="ex-instructions">{{ instructions|inline_bold|linebreaksbr }}</p>
+{% endif %}
+{% endwith %}
+{% if exercise.title %}<h3 class="gap-title">{{ exercise.title }}</h3>{% endif %}
+
+{% if part.kind == 'matching' %}
+<ul class="match-options">
+    {% for letter, text in option_list %}<li>{{ letter|upper }}) {{ text }}</li>{% endfor %}
+</ul>
+{% elif part.kind == 'map' and exercise.image %}
+<figure class="map-figure">
+    <img src="{% url 'courses:exercise_image' exercise.pk %}" alt="Map">
+</figure>
+{% endif %}
+{% if exercise.passage and part.kind != 'passage_gap' and part.kind != 'passage_mixed' %}
+<div class="passage">
+    {% for paragraph in exercise.passage|paragraphs %}<p class="passage-p">{{ paragraph }}</p>{% endfor %}
+</div>
+{% endif %}

@@ -1,0 +1,6 @@
+{% if question.label %}
+<p class="q-line"><strong>{{ number }}. {{ question.label }}</strong></p>
+{% if question.text %}<p class="q-text">{{ question.text|linebreaksbr }}</p>{% endif %}
+{% else %}
+<p class="q-line"><strong>{{ number }}.</strong> {{ question.text|linebreaksbr }}</p>
+{% endif %}

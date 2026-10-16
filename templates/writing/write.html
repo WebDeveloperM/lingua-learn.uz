@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ test.title }} · {{ course.get_category_display }} | Learn English{% endblock %}
+
+{% block content %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap writing-wrap">
+            <form method="post" id="writing-form" data-duration="{{ duration_seconds }}"
+                  action="{% url 'writing:send' course.slug test.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="time_used" id="time-used" value="">
+
+                <a class="pill-btn" href="{{ course.get_absolute_url }}" data-leave>← All tests</a>
+
+                <div class="writing-top">
+                    <div class="wt-tabs" role="tablist" aria-label="Tasks">
+                        {% for task in tasks %}
+                        <button type="button" class="wt-tab{% if forloop.first %} is-active{% endif %}" role="tab"
+                                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" data-tab="{{ task.slot }}">
+                            {{ task.label }} · <span data-tab-count="{{ task.slot }}">0</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <div class="exercise-bar">
+                        <span class="timer-pill" id="timer-pill"><span aria-hidden="true">⏱</span> <span id="timer-label">{{ timer_label }}</span></span>
+                        <button type="button" class="pill-btn" id="pause-btn">⏸ Pause</button>
+                    </div>
+                </div>
+                <p class="paused-note" id="paused-note" hidden>⏸ Paused — the timer is stopped. Press Resume to continue.</p>
+
+                <div class="exercise-body" id="writing-body">
+                    {% for task in tasks %}
+                    <section class="wt-card" data-panel="{{ task.slot }}"{% if not forloop.first %} hidden{% endif %}>
+                        <h2 class="wt-card-title">{{ task.label }} <small>· {{ test.title }} · {{ test.date|date:"j M Y" }} · {{ test.get_shift_display }}</small></h2>
+
+                        {% if task.context or task.prompt %}
+                        <div class="wt-prompt">
+                            {% if task.context %}<p class="wt-context">{{ task.context }}</p>{% endif %}
+                            {% if task.prompt %}<p class="wt-text">{{ task.prompt|linebreaksbr }}</p>{% endif %}
+                        </div>
+                        {% endif %}
+                        <p class="wt-instruction">{{ task.instruction|linebreaksbr }}</p>
+
+                        <textarea class="wt-input" name="answer_{{ task.slot }}" rows="9" maxlength="8000"
+                                  placeholder="Start writing here..." aria-label="{{ task.label }} — your answer"
+                                  data-slot="{{ task.slot }}" data-goal="{{ task.rules.goal }}"
+                                  data-low="{{ task.rules.low }}" data-high="{{ task.rules.high }}"
+                                  data-label="{{ task.label }}" data-target="{{ task.rules.target }}"
+                                  spellcheck="true"></textarea>
+                        <div class="wt-counter">
+                            <strong class="wt-words">0 words</strong>
+                            <span class="wc-bar" aria-hidden="true"><span></span></span>
+                            <span class="wc-target">target {{ task.rules.target }} words</span>
+                        </div>
+
+                        {% if task.phrases %}
+                        <details class="wt-fold">
+                            <summary><span aria-hidden="true">📌</span> <strong>Structure and useful phrases</strong> · tap a phrase to add it</summary>
+                            {% include "writing/_phrases.html" with groups=task.phrases interactive=True %}
+                        </details>
+                        {% endif %}
+                        {% if task.sample_answer %}
+                        <details class="wt-fold">
+                            <summary><span aria-hidden="true">👀</span> <strong>Sample answer</strong> · try your own first</summary>
+                            <div class="wt-sample">{{ task.sample_answer|linebreaksbr }}</div>
+                        </details>
+                        {% endif %}
+                    </section>
+                    {% endfor %}
+
+                    <div class="wt-nav">
+                        <button type="button" class="pill-btn" id="wt-prev" disabled>← Previous</button>
+                        <button type="button" class="pill-btn is-primary" id="wt-next">Next →</button>
+                    </div>
+
+                    <div class="exercise-submit">
+                        <button type="submit" class="btn btn-primary btn-lg start-btn" id="send-btn">Send to my teacher</button>
+                        <div class="submit-confirm" id="send-confirm" role="alert" hidden>
+                            <p id="send-confirm-text"></p>
+                            <ul class="wt-summary" id="send-confirm-list"></ul>
+                            <div class="submit-confirm-actions">
+                                <button type="button" class="pill-btn is-primary" id="confirm-yes">Yes, send</button>
+                                <button type="button" class="pill-btn" id="confirm-no">Keep writing</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/writing.js' %}" defer></script>
+{% endblock %}

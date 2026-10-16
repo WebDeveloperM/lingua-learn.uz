@@ -1,0 +1,74 @@
+{% extends "panel/base.html" %}
+
+{% block title %}O'quvchilar{% endblock %}
+{% block page_title %}O'quvchilarni boshqarish{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <nav class="tabs" aria-label="Holat bo'yicha filtr">
+        <a href="?{% if query %}q={{ query|urlencode }}{% endif %}" class="{% if status == 'all' %}active{% endif %}">Barchasi <span>{{ counts.all }}</span></a>
+        <a href="?status=active{% if query %}&amp;q={{ query|urlencode }}{% endif %}" class="{% if status == 'active' %}active{% endif %}">Faol <span>{{ counts.active }}</span></a>
+        <a href="?status=pending{% if query %}&amp;q={{ query|urlencode }}{% endif %}" class="{% if status == 'pending' %}active{% endif %}">Kutilmoqda <span>{{ counts.pending }}</span></a>
+    </nav>
+    <form method="get" class="search-inline">
+        {% if status != 'all' %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+        <input type="search" name="q" value="{{ query }}" placeholder="Ism, familiya yoki email...">
+        <button type="submit" class="btn btn-primary btn-sm">Qidirish</button>
+    </form>
+</div>
+
+<div class="panel-card flush">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>O'quvchi</th>
+                    <th>Yosh</th>
+                    <th>Ro'yxatdan o'tgan</th>
+                    <th>Holat</th>
+                    <th class="num">Kurslar</th>
+                    <th class="num">Ball</th>
+                    <th class="actions-col">Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in page_obj %}
+                <tr>
+                    <td>
+                        <a class="cell-link" href="{% url 'panel:student_detail' s.pk %}"><strong>{{ s.get_full_name|default:"—" }}</strong></a>
+                        <div class="muted-sm">{{ s.email|default:"email yo'q" }}</div>
+                    </td>
+                    <td>{{ s.age|default_if_none:"—" }}</td>
+                    <td>{{ s.date_joined|date:"d.m.Y" }}</td>
+                    <td>
+                        {% if s.is_active %}<span class="badge badge-green">Faol</span>{% else %}<span class="badge badge-amber">Kutilmoqda</span>{% endif %}
+                    </td>
+                    <td class="num">{{ s.courses_count }}</td>
+                    <td class="num"><strong>{{ s.score }}</strong></td>
+                    <td class="actions-col">
+                        <form method="post" action="{% url 'panel:student_toggle_active' s.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            {% if s.is_active %}
+                                <button type="submit" class="btn btn-ghost btn-xs">Faolsizlantirish</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary btn-xs">Faollashtirish</button>
+                            {% endif %}
+                        </form>
+                        <a class="btn btn-ghost btn-xs" href="{% url 'panel:student_detail' s.pk %}">Ko'rish</a>
+                        <form method="post" action="{% url 'panel:student_delete' s.pk %}" data-confirm="{{ s.get_full_name|default:s.email }} o'quvchisini o'chirishga ishonchingiz komilmi? Bu amalni qaytarib bo'lmaydi.">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-xs">O'chirish</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty-row">O'quvchilar topilmadi.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "panel/_pagination.html" %}
+{% endblock %}

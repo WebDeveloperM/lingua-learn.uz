@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Ruxsat yo'q | Learn English{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-wrap" style="text-align:center;">
+        <h1>Ruxsat yo'q</h1>
+        <p class="sub">Bu sahifaga kirish huquqingiz yo'q. U faqat adminlar uchun.</p>
+        <a href="{% if user.is_authenticated %}{{ user.get_home_url }}{% else %}{% url 'core:home' %}{% endif %}" class="btn btn-primary">Orqaga qaytish</a>
+    </div>
+</div>
+{% endblock %}

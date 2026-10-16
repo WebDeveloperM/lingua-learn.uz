@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Kurslar | Learn English{% endblock %}
+
+{% block content %}
+<section class="catalog-hero">
+    <div class="container">
+        <h1>Barcha kurslar</h1>
+        <p>Grammatika, lug'at, reading, writing, speaking va listening — har bir skill bo'yicha bepul kurslarni toping.</p>
+        <form class="search-form" method="get">
+            {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+            <input type="text" name="q" value="{{ query }}" placeholder="Kurslarni qidirish...">
+            <button type="submit" class="btn btn-primary">Qidirish</button>
+        </form>
+    </div>
+</section>
+
+<section class="practice-section">
+    <div class="container">
+        <div class="category-filters">
+            <a href="{% url 'courses:course_list' %}" class="category-chip {% if not active_category %}active{% endif %}">Barchasi</a>
+            {% for value, label in categories %}
+                <a href="?category={{ value }}" class="category-chip {% if active_category == value %}active{% endif %}">{{ label }}</a>
+            {% endfor %}
+        </div>
+
+        {% if courses %}
+        <div class="course-grid">
+            {% for course in courses %}
+                {% include "courses/_course_card.html" %}
+            {% endfor %}
+        </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Hozircha kurslar topilmadi. Tez orada yangi kurslar qo'shiladi.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

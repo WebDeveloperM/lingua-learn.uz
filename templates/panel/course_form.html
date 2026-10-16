@@ -1,0 +1,103 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{% if course %}Kursni tahrirlash{% else %}Kurs qo'shish{% endif %}{% endblock %}
+{% block page_title %}{% if course %}Kursni tahrirlash{% else %}Yangi kurs qo'shish{% endif %}{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:course_list' %}" class="back-link">← Kurslar ro'yxati</a>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="form-layout">
+        <div class="form-main">
+            <section class="panel-card">
+                <header class="card-head"><h2>Asosiy ma'lumotlar</h2></header>
+                {% include "panel/_field.html" with field=form.title %}
+                <div class="form-grid-2">
+                    {% include "panel/_field.html" with field=form.category %}
+                    {% include "panel/_field.html" with field=form.level %}
+                </div>
+                {% include "panel/_field.html" with field=form.cefr_badge %}
+                {% include "panel/_field.html" with field=form.short_description %}
+            </section>
+
+            {% if course and course.category == 'writing' %}
+            <section class="panel-card" id="practice">
+                <header class="card-head">
+                    <h2>Writing testlar ({{ writing_tests|length }})</h2>
+                    <a href="{% url 'panel:writing_test_create' course.pk %}">➕ Test qo'shish</a>
+                </header>
+                <p class="muted-sm" style="margin-top:-6px;">
+                    Har bir test: sana, smena, Part 2 mavzusi va 3 ta topshiriq (Task 1.1, Task 1.2, Part 2).
+                    Bu sahifadagi o'zgarishlarni avval «Saqlash» bilan saqlang, so'ng testlarga o'ting.
+                    <a href="{% url 'panel:writing_submissions' course.pk %}">Yuborilgan ishlar ({{ submissions_count }}) →</a>
+                </p>
+                {% for test in writing_tests %}
+                <div class="part-row">
+                    <div>
+                        <strong>{{ test.title }}</strong>
+                        <div class="muted-sm">{{ test.date|date:"j M Y" }} · {{ test.get_shift_display }} · {{ test.task_count }} ta topshiriq · {{ test.submission_count }} ta ish yuborilgan</div>
+                    </div>
+                    <a class="btn btn-ghost btn-xs" href="{% url 'panel:writing_test_edit' test.pk %}">Boshqarish</a>
+                </div>
+                {% empty %}
+                <p class="empty-note">Hali test yo'q. «Test qo'shish» tugmasini bosing.</p>
+                {% endfor %}
+            </section>
+            {% else %}
+            <section class="panel-card" id="practice">
+                <header class="card-head">
+                    <h2>Mashqlar (Practice)</h2>
+                    {% if course %}<a href="{% url 'panel:part_create' course.pk %}">➕ Part qo'shish</a>{% endif %}
+                </header>
+                {% if course %}
+                    <p class="muted-sm" style="margin-top:-6px;">
+                        Listening kabi mashq kurslari uchun: Part → Exercise → audio va savollar.
+                        Bu sahifadagi o'zgarishlarni avval «Saqlash» bilan saqlang, so'ng quyidagi havolalarga o'ting.
+                    </p>
+                    {% for part in parts %}
+                    <div class="part-row">
+                        <div>
+                            <strong>{{ part.icon }} Part {{ part.number }} · {{ part.name }}</strong>
+                            <div class="muted-sm">{{ part.exercise_list|length }} ta mashq · {{ part.ready_count }} tasi tayyor</div>
+                        </div>
+                        <a class="btn btn-ghost btn-xs" href="{% url 'panel:part_edit' part.pk %}">Boshqarish</a>
+                    </div>
+                    {% empty %}
+                    <p class="empty-note">Hali Part yo'q. «Part qo'shish» tugmasini bosing.</p>
+                    {% endfor %}
+                {% else %}
+                    <p class="muted-sm">Part va mashqlarni qo'shish uchun avval kursni saqlang — shundan so'ng bu bo'lim shu yerda ochiladi.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+        </div>
+
+        <aside class="form-side">
+            <section class="panel-card">
+                <header class="card-head"><h2>Nashr</h2></header>
+                {% include "panel/_field.html" with field=form.is_published %}
+                {% include "panel/_field.html" with field=form.is_new %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                    {% if course %}
+                        <a href="{{ course.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-ghost">Saytda ko'rish ↗</a>
+                        <a href="#practice" class="btn btn-ghost">Mashqlar (Part) ↓</a>
+                    {% endif %}
+                    <a href="{% url 'panel:course_list' %}" class="btn btn-ghost">Bekor qilish</a>
+                </div>
+            </section>
+
+            <section class="panel-card">
+                <header class="card-head"><h2>Qo'shimcha</h2></header>
+                {% include "panel/_field.html" with field=form.duration_text %}
+                {% include "panel/_field.html" with field=form.language %}
+                {% include "panel/_field.html" with field=form.publisher_name %}
+                {% include "panel/_field.html" with field=form.is_cpd_accredited %}
+            </section>
+        </aside>
+    </div>
+</form>
+{% endblock %}

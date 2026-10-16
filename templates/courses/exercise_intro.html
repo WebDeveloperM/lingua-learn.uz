@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.get_category_display }} · Part {{ part.number }} · Exercise {{ exercise.number }} | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{{ course.get_absolute_url }}">← {{ course.get_category_display }} practice</a>
+            <h1 class="exercise-title">{{ course.get_category_display }} · Part {{ part.number }} · Exercise {{ exercise.number }}</h1>
+
+            <section class="ready-card">
+                <h2>Ready to start? ⏱</h2>
+                <p class="ready-meta">1 part · {{ exercise.question_count }} question{{ exercise.question_count|pluralize }} · <strong>{{ exercise.duration_minutes }} minute{{ exercise.duration_minutes|pluralize }}</strong></p>
+                <p>The timer starts when you press Start. You will see your results after you press <strong>Submit</strong>. When the time is over, your answers are submitted automatically.</p>
+                {% if exercise.is_ready %}
+                    <a class="btn btn-primary btn-lg start-btn" href="{% url 'courses:exercise_play' course.slug part.number exercise.number %}">Start exercise 🚀</a>
+                {% else %}
+                    <button type="button" class="btn btn-primary btn-lg start-btn" disabled>Start exercise 🚀</button>
+                    <p class="not-ready-note">
+                        This exercise is not ready yet — its {% if part.needs_audio %}audio and questions{% else %}text and questions{% endif %} have not been added.
+                        {% if user.is_admin %}<a href="{% url 'panel:exercise_edit' exercise.pk %}">Add them in the panel →</a>{% endif %}
+                    </p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}

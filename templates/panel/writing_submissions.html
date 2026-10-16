@@ -1,0 +1,46 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Yuborilgan ishlar{% endblock %}
+{% block page_title %}{{ course.get_category_display }} · Yuborilgan ishlar{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:course_edit' course.pk %}#practice" class="back-link">← {{ course.title }}</a>
+
+<div class="panel-card flush">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Yuborilgan</th>
+                    <th>O'quvchi</th>
+                    <th>Test</th>
+                    <th class="num">So'zlar</th>
+                    <th class="num">Vaqt</th>
+                    <th class="actions-col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in page_obj %}
+                <tr>
+                    <td>{{ submission.sent_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ submission.user.get_full_name|default:submission.user.email }}</td>
+                    <td>
+                        <strong>{{ submission.test.title }}</strong>
+                        <div class="muted-sm">{{ submission.test.date|date:"j M Y" }} · {{ submission.test.get_shift_display }}</div>
+                    </td>
+                    <td class="num">
+                        {% for answer in submission.answers.all %}{{ answer.word_count }}{% if not forloop.last %} / {% endif %}{% endfor %}
+                    </td>
+                    <td class="num">{{ submission.time_used|default:"—" }}</td>
+                    <td class="actions-col"><a class="btn btn-ghost btn-xs" href="{% url 'panel:writing_submission' submission.pk %}">Ko'rish</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty-row">Hali hech kim ish yubormagan.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "panel/_pagination.html" %}
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ course.title }} | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="course-hero">
+    <div class="container course-hero-grid">
+        <div>
+            <span class="level-badge">📶 {{ course.get_level_display }}</span>
+            <h1 class="course-title">{{ course.title }}</h1>
+            <p class="course-short-desc">{{ course.short_description }}</p>
+            <div class="hero-actions">
+                {% if is_enrolled %}
+                    <a href="#" class="btn btn-primary btn-lg">Continue Learning</a>
+                {% else %}
+                    <a href="{% url 'courses:enroll' course.slug %}" class="btn btn-primary btn-lg">Continue Learning</a>
+                {% endif %}
+                <a href="#" class="btn btn-outline btn-lg">📄 Certify Now</a>
+            </div>
+            <div class="publisher-row">
+                <span class="avatar">{{ course.publisher_name|slice:":1" }}</span>
+                <span>Published by <a href="#">{{ course.publisher_name }}</a></span>
+            </div>
+        </div>
+
+        <div>
+            <div class="course-thumb-card">
+                <span class="cert-ribbon">🔒 CERTIFICATE</span>
+                <h3>Learn<br>English</h3>
+                <p>{{ course.title }}</p>
+                <div class="thumb-illustration">🧑‍🤝‍🧑</div>
+                {% if course.cefr_badge %}
+                    <span class="cefr-pill">{{ course.cefr_badge }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <div class="stats-bar">
+        <div class="stat">
+            <strong>{{ course.enrolled_count }} Enrolled</strong>
+            <div class="stat-sub">👍 {{ course.positive_ratings_count }} Positive Ratings</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Avg. Duration</div>
+            <strong>{{ course.duration_text }}</strong>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Available Languages (1)</div>
+            <strong>🇬🇧 {{ course.language }}</strong>
+        </div>
+        <div class="stat">
+            {% if course.is_cpd_accredited %}
+                <div class="cpd-logo">CPD</div>
+                <div class="stat-sub">This course is <a href="#">CPD-Accredited</a></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Learning Outcomes</h2>
+        <p class="section-subtitle">In this free course, you will learn how to:</p>
+        <div class="outcomes-grid">
+            {% for outcome in learning_outcomes %}
+                <div class="outcome-item">
+                    <span class="outcome-check">✅</span>
+                    <span>{{ outcome.text }}</span>
+                </div>
+            {% empty %}
+                <p class="muted">Bu kurs uchun hali learning outcome qo'shilmagan.</p>
+            {% endfor %}
+        </div>
+
+        {% if skill_tags %}
+            <div class="skills-heading">Knowledge &amp; skills you will learn</div>
+            <div class="skills-tags">
+                {% for tag in skill_tags %}
+                    <span class="skill-pill {% if tag.highlighted %}highlighted{% endif %}">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Course Overview</h2>
+        {% if course.about_this_course %}
+        <div class="overview-block">
+            <h3>About This Course</h3>
+            <p>{{ course.about_this_course }}</p>
+        </div>
+        {% endif %}
+        {% if course.course_description %}
+        <div class="overview-block" id="course-desc-block">
+            <h3>Course Description</h3>
+            <p class="desc-short">{{ course.course_description|truncatewords:40 }}</p>
+            <p class="desc-full">{{ course.course_description }}</p>
+            <button type="button" class="read-more-toggle" onclick="document.getElementById('course-desc-block').classList.toggle('expanded'); this.textContent = document.getElementById('course-desc-block').classList.contains('expanded') ? 'Read Less ▴' : 'Read More ▾';">Read More ▾</button>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="cert-banner">
+            <div>
+                <h2>Showcase Skills With A Certificate!</h2>
+                <div class="cert-feature">
+                    <span class="icon">🎓</span>
+                    <p><strong>Earn credentials that matter:</strong> Anyone can say they're learning. Bizning sertifikatimiz sizning harakatingizni tasdiqlaydi.</p>
+                </div>
+                <div class="cert-feature">
+                    <span class="icon">🤝</span>
+                    <p><strong>Get an edge over others:</strong> Sertifikatni CV, LinkedIn va profilingizga qo'shib, ish beruvchilarga ko'rsating.</p>
+                </div>
+                <div class="cert-feature">
+                    <span class="icon">📈</span>
+                    <p><strong>Show you're serious about growth:</strong> Sertifikat — bu intilish va doimiy rivojlanish belgisi.</p>
+                </div>
+            </div>
+            <div>
+                <div class="cert-image">
+                    <span class="sample-watermark">SAMPLE</span>
+                    <div class="cert-ribbon-strip"></div>
+                    <h4>CERTIFICATE</h4>
+                    <div class="cert-name-line">YOUR NAME WILL APPEAR HERE</div>
+                    <p class="stat-sub">has received this award for successfully completing the course:</p>
+                    <div class="cert-name-line">{{ course.title }}</div>
+                </div>
+                <div style="text-align:center; margin-top:18px;">
+                    <a href="{% url 'courses:enroll' course.slug %}" class="btn btn-primary">Continue Learning</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

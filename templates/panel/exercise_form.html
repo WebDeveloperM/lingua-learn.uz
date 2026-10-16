@@ -1,0 +1,160 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Exercise {{ exercise.number }}{% endblock %}
+{% block page_title %}{{ course.get_category_display }} · Part {{ part.number }} · Exercise {{ exercise.number }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:part_edit' part.pk %}" class="back-link">← Part {{ part.number }} · {{ part.name }}</a>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="form-layout">
+        <div class="form-main">
+            {% if form.audio %}
+            <section class="panel-card">
+                <header class="card-head"><h2>Audio</h2></header>
+                {% if exercise.audio %}
+                    <audio class="admin-audio" controls preload="metadata" src="{% url 'courses:exercise_audio' exercise.pk %}"></audio>
+                    <p class="muted-sm">Joriy fayl: {{ exercise.audio.name }}</p>
+                {% else %}
+                    <p class="empty-note">Audio hali yuklanmagan.</p>
+                {% endif %}
+                <div class="form-group">
+                    <label for="{{ form.audio.id_for_label }}">{% if exercise.audio %}Audioni almashtirish{% else %}Audio yuklash{% endif %}</label>
+                    {{ form.audio }}
+                    <div class="help-text">mp3, wav, ogg, m4a yoki aac · 30 MB gacha</div>
+                    {% if form.audio.errors %}<div class="form-errors">{{ form.audio.errors }}</div>{% endif %}
+                </div>
+                {% if exercise.audio %}{% include "panel/_field.html" with field=form.remove_audio %}{% endif %}
+            </section>
+            {% endif %}
+
+            {% if form.image %}
+            <section class="panel-card">
+                <header class="card-head"><h2>Xarita</h2></header>
+                {% if exercise.image %}
+                    <img class="admin-map" src="{% url 'courses:exercise_image' exercise.pk %}" alt="Xarita">
+                    <p class="muted-sm">Joriy fayl: {{ exercise.image.name }}</p>
+                {% else %}
+                    <p class="empty-note">Rasm hali yuklanmagan.</p>
+                {% endif %}
+                <div class="form-group">
+                    <label for="{{ form.image.id_for_label }}">{% if exercise.image %}Rasmni almashtirish{% else %}Xarita rasmini yuklash{% endif %}</label>
+                    {{ form.image }}
+                    <div class="help-text">png, jpg, gif yoki webp · 8 MB gacha. Xaritada harflar (A, B, C...) rasmning o'zida bo'lishi kerak.</div>
+                    {% if form.image.errors %}<div class="form-errors">{{ form.image.errors }}</div>{% endif %}
+                </div>
+                {% if exercise.image %}{% include "panel/_field.html" with field=form.remove_image %}{% endif %}
+                {% include "panel/_field.html" with field=form.letters_count %}
+            </section>
+            {% endif %}
+
+            <section class="panel-card">
+                <header class="card-head"><h2>Matn va ko'rsatma</h2></header>
+                {% if form.title %}{% include "panel/_field.html" with field=form.title %}{% endif %}
+                {% include "panel/_field.html" with field=form.instructions %}
+                {% if part.instructions %}
+                    <p class="muted-sm" style="margin-top:-6px;">Part'ning umumiy ko'rsatmasi (bu yerda matn yozilmasa shu chiqadi): {{ part.instructions }}</p>
+                {% endif %}
+                {% if form.options %}{% include "panel/_field.html" with field=form.options %}{% endif %}
+            </section>
+
+            {% if form.passage %}
+            <section class="panel-card">
+                {% if part.kind == 'passage_gap' or part.kind == 'passage_mixed' %}
+                <header class="card-head"><h2>Matn (Passage) · {{ part.first_question_number }}-savoldan boshlanadi</h2></header>
+                {% else %}
+                <header class="card-head"><h2>Matn (Passage)</h2></header>
+                {% endif %}
+                {% include "panel/_field.html" with field=form.passage %}
+                {% if part.kind == 'passage_gap' or part.kind == 'passage_mixed' %}
+                <div class="gap-summary">
+                    <h3>Bo'sh joylar</h3>
+                    {% if gaps %}
+                    <p class="muted-sm">Saqlangan matnda {{ gaps|length }} ta bo'sh joy topildi — o'quvchi shularni yozadi:</p>
+                    <ol class="gap-answers">
+                        {% for gap in gaps %}<li value="{{ gap.number }}"><span>{{ gap.answer }}</span></li>{% endfor %}
+                    </ol>
+                    {% else %}
+                    <p class="empty-note">Hali bo'sh joy yo'q. Matnni yozing, so'zlarni [[ ]] ichiga oling va saqlang.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {% if questions %}
+            <section class="panel-card" data-formset data-prefix="questions">
+                <header class="card-head"><h2>{% if part.kind == 'passage_mixed' %}Test savollar{% else %}Savollar{% endif %} ({{ row_start }}-savoldan boshlanadi)</h2></header>
+                <p class="muted-sm" style="margin-top:-6px;">
+                    {% if part.kind == 'gap_fill' %}
+                        Har qatorda: sarlavha (qalin yoziladi), kiritish joyidan oldingi va keyingi matn hamda to'g'ri javob.
+                        Bir nechta javob qabul qilinsa, ularni <b>/</b> bilan ajrating (masalan: space / outer space).
+                        Katta-kichik harf va ortiqcha probellar hisobga olinmaydi.
+                        Gapsiz oddiy qator kerak bo'lsa (masalan: Labyrinths represent a journey through life.),
+                        uni keyingi qatorning birinchi maydoniga yozing: u shu qatordan oldin alohida satrda chiqadi.
+                    {% elif part.kind == 'matching' %}
+                        Har bir savol uchun: savol matni (masalan: Speaker 1 yoki butun abzas) va to'g'ri javob harfi;
+                        ixtiyoriy qalin sarlavha ham bor (masalan: Paragraph I — u savol raqami yonida qalin chiqadi,
+                        matn esa uning ostida). Harflar yuqoridagi «Variantlar ro'yxati» tartibiga mos keladi
+                        (A — 1-qator, B — 2-qator...).
+                    {% elif part.kind == 'map' %}
+                        Har bir savol uchun joy nomi (masalan: Gift shop) va xaritadagi to'g'ri harf. O'quvchi
+                        har savolda bitta harfni tanlaydi; harflar «Javob harflari soni» bo'yicha chiqadi.
+                    {% elif part.kind == 'passage_mixed' %}
+                        Matndagi bo'sh joylardan keyin keladigan test savollari: har birida A, B, C (D ixtiyoriy)
+                        variantlari va to'g'ri javob. «Oldingi sarlavha» savoldan oldin alohida kartochkada chiqadi
+                        (masalan: **Questions 34-35:** choose the correct answer A, B, C or D.).
+                    {% else %}
+                        Har bir savolda 3 ta variant (A, B, C; to'rtinchi D ixtiyoriy) va to'g'ri javob belgilanadi.
+                        Savol matni ixtiyoriy: audiodagi gapga javob tanlanadigan mashqlarda uni bo'sh qoldiring.
+                        «Oldingi sarlavha» ham ixtiyoriy: u shu savoldan oldin alohida kartochkada chiqadi
+                        (masalan: **Extract One** · You hear... yoki **Questions 21-24:** choose the correct answer A, B, C or D.).
+                        True / False / Not given savollari uchun A, B, C variantlariga shu so'zlarni yozing.
+                    {% endif %}
+                </p>
+                {{ questions.management_form }}
+                {% if questions.non_form_errors %}<div class="form-errors">{{ questions.non_form_errors }}</div>{% endif %}
+                <div data-rows class="q-rows" style="counter-reset: qrow {{ row_start|add:'-1' }};">
+                    {% for f in questions.forms %}{% include row_template %}{% endfor %}
+                </div>
+                <template data-empty>{% include row_template with f=questions.empty_form %}</template>
+                <button type="button" class="btn btn-ghost btn-sm" data-add>+ Savol qo'shish</button>
+            </section>
+            {% endif %}
+
+            {% if form.transcript %}
+            <section class="panel-card">
+                <header class="card-head"><h2>Transcript</h2></header>
+                {% include "panel/_field.html" with field=form.transcript %}
+            </section>
+            {% endif %}
+        </div>
+
+        <aside class="form-side">
+            <section class="panel-card">
+                <header class="card-head"><h2>Mashq</h2></header>
+                {% include "panel/_field.html" with field=form.duration_minutes %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                    <a href="{{ student_url }}" target="_blank" rel="noopener" class="btn btn-ghost">O'quvchi ko'rinishi ↗</a>
+                    <a href="{% url 'panel:part_edit' part.pk %}" class="btn btn-ghost">Orqaga</a>
+                </div>
+            </section>
+
+            <section class="panel-card">
+                <header class="card-head"><h2>Xavfli amal</h2></header>
+                <p class="muted-sm" style="margin-top:-6px;">Mashq o'chirilsa, uning {% if part.needs_audio %}audiosi, {% endif %}savollari va o'quvchilar natijalari ham o'chadi.</p>
+                <button type="submit" form="delete-exercise" class="btn btn-danger btn-block">Mashqni o'chirish</button>
+            </section>
+        </aside>
+    </div>
+</form>
+
+<form id="delete-exercise" method="post" action="{% url 'panel:exercise_delete' exercise.pk %}"
+      data-confirm="Exercise {{ exercise.number }} o'chirilsinmi? {% if part.needs_audio %}Audio, savollar{% else %}Matn, savollar{% endif %} va o'quvchilar natijalari ham o'chadi. Bu amalni qaytarib bo'lmaydi.">
+    {% csrf_token %}
+</form>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{{ student.get_full_name|default:student.email }}{% endblock %}
+{% block page_title %}O'quvchi ma'lumotlari{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:student_list' %}" class="back-link">← O'quvchilar ro'yxati</a>
+
+<div class="detail-grid">
+    <section class="panel-card">
+        <div class="profile-head">
+            <span class="panel-avatar big">{{ student.first_name|default:student.email|slice:":1"|upper }}</span>
+            <div>
+                <h2>{{ student.get_full_name|default:"Ismi kiritilmagan" }}</h2>
+                <div class="muted-sm">{{ student.email|default:"email yo'q" }}</div>
+            </div>
+            {% if student.is_active %}<span class="badge badge-green">Faol</span>{% else %}<span class="badge badge-amber">Kutilmoqda</span>{% endif %}
+        </div>
+
+        <dl class="info-list">
+            <dt>Tug'ilgan kun</dt>
+            <dd>{{ student.birth_date|date:"d.m.Y"|default:"—" }}{% if student.age is not None %} ({{ student.age }} yosh){% endif %}</dd>
+            <dt>Ro'yxatdan o'tgan</dt>
+            <dd>{{ student.date_joined|date:"d.m.Y H:i" }}</dd>
+            <dt>Oxirgi kirish</dt>
+            <dd>{{ student.last_login|date:"d.m.Y H:i"|default:"Hali kirmagan" }}</dd>
+            <dt>Kurslar</dt>
+            <dd>{{ student.courses_count }} ta ({{ student.completed_count }} ta tugatilgan)</dd>
+            <dt>Umumiy ball</dt>
+            <dd>{{ student.score }}</dd>
+        </dl>
+
+        <div class="detail-actions">
+            <form method="post" action="{% url 'panel:student_toggle_active' student.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                {% if student.is_active %}
+                    <button type="submit" class="btn btn-ghost btn-sm">Faolsizlantirish</button>
+                {% else %}
+                    <button type="submit" class="btn btn-primary btn-sm">Faollashtirish</button>
+                {% endif %}
+            </form>
+            <form method="post" action="{% url 'panel:student_delete' student.pk %}" data-confirm="{{ student.get_full_name|default:student.email }} o'quvchisini o'chirishga ishonchingiz komilmi? Bu amalni qaytarib bo'lmaydi.">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">O'chirish</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="panel-card">
+        <header class="card-head"><h2>Yozilgan kurslar</h2></header>
+        {% for e in enrollments %}
+        <div class="enroll-row">
+            <div class="enroll-main">
+                <a href="{{ e.course.get_absolute_url }}" target="_blank" rel="noopener">{{ e.course.title }}</a>
+                <div class="muted-sm">Yozilgan: {{ e.enrolled_at|date:"d.m.Y" }}</div>
+                <div class="progress" role="progressbar" aria-valuenow="{{ e.progress_percent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ e.progress_percent }}%"></span></div>
+            </div>
+            <form method="post" action="{% url 'panel:enrollment_progress' e.pk %}" class="progress-form">
+                {% csrf_token %}
+                <input type="number" name="progress_percent" min="0" max="100" value="{{ e.progress_percent }}" required aria-label="Progress foizi">
+                <span>%</span>
+                <button type="submit" class="btn btn-ghost btn-xs">Saqlash</button>
+            </form>
+        </div>
+        {% empty %}
+        <p class="empty-note">O'quvchi hali hech qaysi kursga yozilmagan.</p>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

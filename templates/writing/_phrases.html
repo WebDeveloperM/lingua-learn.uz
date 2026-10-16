@@ -1,0 +1,17 @@
+{% comment %}The structure and useful phrases of a task. `interactive` makes each phrase a button that adds itself to the answer.{% endcomment %}
+<div class="phrase-groups">
+    {% for group in groups %}
+    <h4 class="phrase-group"><span>{{ forloop.counter }}. {{ group.title }}</span> <em>— {{ group.hint }}</em></h4>
+    {% for english, uzbek in group.phrases %}
+        {% if interactive %}
+        <button type="button" class="phrase" data-phrase="{{ english }}">
+            <span class="phrase-en">{{ english }}</span><span class="phrase-uz">{{ uzbek }}</span>
+        </button>
+        {% else %}
+        <div class="phrase">
+            <span class="phrase-en">{{ english }}</span><span class="phrase-uz">{{ uzbek }}</span>
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% endfor %}
+</div>

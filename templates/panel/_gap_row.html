@@ -1,0 +1,21 @@
+<div class="q-row" data-row {% if f.DELETE.value %}hidden{% endif %}>
+    {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+    <div class="q-row-head">
+        <span class="q-row-title"></span>
+        <span class="row-delete">{{ f.DELETE }}</span>
+        <button type="button" class="icon-btn" data-remove aria-label="Qatorni olib tashlash">×</button>
+    </div>
+    <div class="q-row-body gap-row-body">
+        <div class="q-text-field">{{ f.intro }}</div>
+        <div class="q-text-field">{{ f.text }}</div>
+        <div>{{ f.text_before }}</div>
+        <div>{{ f.text_after }}</div>
+        <div class="gap-answer-field">{{ f.answer }}</div>
+    </div>
+    {% if f.errors %}
+    <div class="form-errors">
+        {% for field in f.visible_fields %}{{ field.errors }}{% endfor %}
+        {{ f.non_field_errors }}
+    </div>
+    {% endif %}
+</div>

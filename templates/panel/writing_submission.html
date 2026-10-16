@@ -1,0 +1,42 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{{ submission.user.get_full_name|default:submission.user.email }} · {{ submission.test.title }}{% endblock %}
+{% block page_title %}Yuborilgan ish{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:writing_submissions' course.pk %}" class="back-link">← Yuborilgan ishlar</a>
+
+<section class="panel-card">
+    <div class="profile-head">
+        <span class="panel-avatar big">{{ submission.user.first_name|default:submission.user.email|slice:":1"|upper }}</span>
+        <div>
+            <h2>{{ submission.user.get_full_name|default:submission.user.email }}</h2>
+            <div class="muted-sm">{{ submission.user.email }}</div>
+        </div>
+    </div>
+    <dl class="info-list">
+        <dt>Test</dt>
+        <dd>{{ submission.test.title }} · {{ submission.test.date|date:"j M Y" }} · {{ submission.test.get_shift_display }}</dd>
+        <dt>Yuborilgan</dt>
+        <dd>{{ submission.sent_at|date:"d.m.Y H:i" }}</dd>
+        <dt>Yozish vaqti</dt>
+        <dd>{{ submission.time_used|default:"—" }}</dd>
+        <dt>Jami so'zlar</dt>
+        <dd>{{ submission.total_words }}</dd>
+    </dl>
+</section>
+
+{% for row in rows %}
+<section class="panel-card" style="margin-top:20px;">
+    <header class="card-head"><h2>{{ row.answer.label }} <small class="muted-sm">· {{ row.answer.word_count }} so'z{% if row.task %} · {{ row.task.description }}{% endif %}</small></h2></header>
+    {% if row.task %}
+    <p class="muted-sm" style="margin-top:-6px;"><strong>Topshiriq:</strong> {{ row.task.instruction|linebreaksbr }}</p>
+    {% endif %}
+    {% if row.answer.text %}
+    <div class="submission-text">{{ row.answer.text|linebreaksbr }}</div>
+    {% else %}
+    <p class="empty-note">Bu topshiriq bo'sh qoldirilgan.</p>
+    {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

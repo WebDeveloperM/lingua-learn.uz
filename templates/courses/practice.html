@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.get_category_display }} practice | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="practice-wrap">
+            <h1 class="practice-title">{{ course.icon }} {{ course.get_category_display }} practice</h1>
+            <p class="practice-intro">{{ intro }}</p>
+
+            {% for part in parts %}
+            <section class="part-card" aria-labelledby="part-{{ part.number }}">
+                <header class="part-head">
+                    <h2 class="part-title" id="part-{{ part.number }}">{{ part.icon }} Part {{ part.number }} · {{ part.name }}</h2>
+                    <span class="part-ready">{{ part.exercise_list|length }} ready</span>
+                </header>
+                <ul class="ex-grid">
+                    {% for exercise in part.exercise_list %}
+                    <li>
+                        <a class="ex-tile" href="{% url 'courses:exercise_intro' course.slug part.number exercise.number %}">
+                            <span class="ex-label">Exercise</span>
+                            <span class="ex-number">{{ exercise.number }}</span>
+                            {% if exercise.user_result %}
+                                <span class="ex-status">⭐ {{ exercise.user_result.score }}/{{ exercise.user_result.total }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if part.key_words_count %}
+                <span class="vocab-pill">📚 Key vocabulary · {{ part.key_words_count }} words</span>
+                {% endif %}
+            </section>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

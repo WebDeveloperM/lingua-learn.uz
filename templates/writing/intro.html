@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }} · {{ course.get_category_display }} | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{{ course.get_absolute_url }}">← {{ course.get_category_display }} practice</a>
+            <h1 class="exercise-title">{{ test.title }} <small class="wt-title-meta">· {{ test.date|date:"j M Y" }} · {{ test.get_shift_display }}</small></h1>
+
+            <section class="ready-card">
+                <h2>Ready? ⏱</h2>
+                <p class="ready-meta">{{ tasks|length }} task{{ tasks|length|pluralize }} · <strong>{{ test.duration_minutes }} minutes</strong> in total.</p>
+                {% if tasks %}
+                <ul class="wt-tasks">
+                    {% for task in tasks %}<li>{{ task.label }}: {{ task.description }}</li>{% endfor %}
+                </ul>
+                <p>The timer starts when you press Start. You can move between tasks. If you leave the test before sending, your writing is deleted. When time is up, your answers are sent automatically.</p>
+                <a class="btn btn-primary btn-lg start-btn" href="{% url 'writing:write' course.slug test.pk %}">Start writing 🚀</a>
+                {% else %}
+                <button type="button" class="btn btn-primary btn-lg start-btn" disabled>Start writing 🚀</button>
+                <p class="not-ready-note">
+                    This test is not ready yet — its tasks have not been added.
+                    {% if user.is_admin %}<a href="{% url 'panel:writing_test_edit' test.pk %}">Add them in the panel →</a>{% endif %}
+                </p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}

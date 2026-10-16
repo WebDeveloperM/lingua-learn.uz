@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Ro'yxatdan o'tdingiz | Learn English{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-wrap">
+        <h1>Ro'yxatdan o'tdingiz!</h1>
+        <p class="sub">Akkountingiz yaratildi, lekin hali faol emas.</p>
+
+        {% include "accounts/_admin_contact.html" with message="Akkountingizni faollashtirish uchun adminga murojaat qiling." %}
+
+        <a href="{% url 'accounts:login' %}" class="btn btn-outline btn-block">Kirish sahifasiga o'tish</a>
+        <p class="auth-footer-link">Admin akkountingizni faollashtirgach, login va parolingiz bilan kirishingiz mumkin.</p>
+    </div>
+</div>
+{% endblock %}

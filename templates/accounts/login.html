@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Kirish | Learn English{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-wrap">
+        <h1>Kirish</h1>
+        <p class="sub">Akkountingizga kiring va o'qishni davom ettiring.</p>
+
+        {% if pending_activation %}
+            {% include "accounts/_admin_contact.html" with message="Akkountingiz hali faollashtirilmagan. Faollashtirish uchun adminga murojaat qiling." %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="form-errors">{{ form.email.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">Parol</label>
+                <div class="password-field">
+                    {{ form.password }}
+                    {% include "accounts/_password_toggle.html" %}
+                </div>
+                {% if form.password.errors %}<div class="form-errors">{{ form.password.errors }}</div>{% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Kirish</button>
+        </form>
+
+        <div class="auth-footer-link">
+            Akkountingiz yo'qmi? <a href="{% url 'accounts:register' %}">Ro'yxatdan o'tish</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{% if test %}{{ test.title }}{% else %}Yangi Writing testi{% endif %}{% endblock %}
+{% block page_title %}{{ course.get_category_display }} · {% if test %}{{ test.title }}{% else %}Yangi test qo'shish{% endif %}{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:course_edit' course.pk %}#practice" class="back-link">← {{ course.title }}</a>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="form-layout">
+        <div class="form-main">
+            <section class="panel-card">
+                <header class="card-head"><h2>Test ma'lumotlari</h2></header>
+                {% include "panel/_field.html" with field=form.title %}
+                <div class="form-grid-2">
+                    {% include "panel/_field.html" with field=form.date %}
+                    {% include "panel/_field.html" with field=form.shift %}
+                </div>
+                {% include "panel/_field.html" with field=form.topic %}
+            </section>
+
+            {% for section in sections %}
+            <section class="panel-card">
+                <header class="card-head"><h2>{{ section.label }} <small class="muted-sm">· {{ section.description }}</small></h2></header>
+                <p class="muted-sm" style="margin-top:-6px;">Hamma maydon bo'sh qolsa, bu topshiriq testda bo'lmaydi.</p>
+                {% for field in section.fields %}{% include "panel/_field.html" with field=field %}{% endfor %}
+            </section>
+            {% endfor %}
+        </div>
+
+        <aside class="form-side">
+            <section class="panel-card">
+                <header class="card-head"><h2>Test</h2></header>
+                {% include "panel/_field.html" with field=form.duration_minutes %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                    {% if student_url %}<a href="{{ student_url }}" target="_blank" rel="noopener" class="btn btn-ghost">O'quvchi ko'rinishi ↗</a>{% endif %}
+                    <a href="{% url 'panel:course_edit' course.pk %}#practice" class="btn btn-ghost">Orqaga</a>
+                </div>
+            </section>
+
+            {% if test %}
+            <section class="panel-card">
+                <header class="card-head"><h2>Xavfli amal</h2></header>
+                <p class="muted-sm" style="margin-top:-6px;">Test o'chirilsa, uning topshiriqlari va o'quvchilar yuborgan ishlar ham o'chadi.</p>
+                <button type="submit" form="delete-test" class="btn btn-danger btn-block">Testni o'chirish</button>
+            </section>
+            {% endif %}
+        </aside>
+    </div>
+</form>
+
+{% if test %}
+<form id="delete-test" method="post" action="{% url 'panel:writing_test_delete' test.pk %}"
+      data-confirm="&quot;{{ test.title }}&quot; testi o'chirilsinmi? Topshiriqlari va o'quvchilar yuborgan ishlar ham o'chadi. Bu amalni qaytarib bo'lmaydi.">
+    {% csrf_token %}
+</form>
+{% endif %}
+{% endblock %}

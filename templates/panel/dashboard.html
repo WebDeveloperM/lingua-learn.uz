@@ -1,0 +1,106 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="stat-grid">
+    <a class="stat-card" href="{% url 'panel:student_list' %}">
+        <span class="stat-icon">👥</span>
+        <div>
+            <div class="stat-value">{{ total_students }}</div>
+            <div class="stat-label">Jami o'quvchilar</div>
+            <div class="stat-note">So'nggi 7 kunda +{{ new_this_week }}</div>
+        </div>
+    </a>
+    <a class="stat-card" href="{% url 'panel:student_list' %}?status=active">
+        <span class="stat-icon">✅</span>
+        <div>
+            <div class="stat-value">{{ active_students }}</div>
+            <div class="stat-label">Faol o'quvchilar</div>
+        </div>
+    </a>
+    <a class="stat-card stat-warn {% if pending_count %}has-pending{% endif %}" href="{% url 'panel:student_list' %}?status=pending">
+        <span class="stat-icon">⏳</span>
+        <div>
+            <div class="stat-value">{{ pending_count }}</div>
+            <div class="stat-label">Faollashtirish kutilmoqda</div>
+        </div>
+    </a>
+    <a class="stat-card" href="{% url 'panel:course_list' %}">
+        <span class="stat-icon">📚</span>
+        <div>
+            <div class="stat-value">{{ courses_total }}</div>
+            <div class="stat-label">Kurslar</div>
+            <div class="stat-note">{{ courses_published }} tasi nashr etilgan</div>
+        </div>
+    </a>
+    <div class="stat-card">
+        <span class="stat-icon">📝</span>
+        <div>
+            <div class="stat-value">{{ enrollments_total }}</div>
+            <div class="stat-label">Kursga yozilishlar</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">🎓</span>
+        <div>
+            <div class="stat-value">{{ completed_total }}</div>
+            <div class="stat-label">Tugatilgan kurslar</div>
+        </div>
+    </div>
+</section>
+
+<div class="dash-grid">
+    <section class="panel-card">
+        <header class="card-head">
+            <h2>Faollashtirish kutilmoqda</h2>
+            <a href="{% url 'panel:student_list' %}?status=pending">Hammasi</a>
+        </header>
+        {% if pending_students %}
+        <ul class="pending-list">
+            {% for s in pending_students %}
+            <li>
+                <div>
+                    <a href="{% url 'panel:student_detail' s.pk %}"><strong>{{ s.get_full_name|default:s.email }}</strong></a>
+                    <div class="muted-sm">{{ s.email }} · {{ s.date_joined|date:"d.m.Y H:i" }}</div>
+                </div>
+                <form method="post" action="{% url 'panel:student_toggle_active' s.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-primary btn-xs">Faollashtirish</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-note">Faollashtirishni kutayotgan o'quvchi yo'q.</p>
+        {% endif %}
+    </section>
+
+    <section class="panel-card">
+        <header class="card-head">
+            <h2>Top 5 o'quvchi</h2>
+            <a href="{% url 'panel:rating' %}">To'liq reyting</a>
+        </header>
+        {% if top_students %}
+        <ul class="top-list">
+            {% for row in top_students %}
+            <li>
+                <div class="who">
+                    <span class="rank-badge">{% if row.rank == 1 %}🥇{% elif row.rank == 2 %}🥈{% elif row.rank == 3 %}🥉{% else %}{{ row.rank }}{% endif %}</span>
+                    <div>
+                        <a href="{% url 'panel:student_detail' row.student.pk %}"><strong>{{ row.student.get_full_name|default:row.student.email }}</strong></a>
+                        <div class="muted-sm">{{ row.student.courses_count }} ta kurs · {{ row.student.completed_count }} ta tugatilgan</div>
+                    </div>
+                </div>
+                <span class="score">{{ row.student.score }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-note">Hali faol o'quvchilar yo'q.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

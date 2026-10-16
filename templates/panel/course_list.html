@@ -1,0 +1,83 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Kurslar{% endblock %}
+{% block page_title %}Kurslar{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <nav class="tabs" aria-label="Holat bo'yicha filtr">
+        <a href="?{% if category %}category={{ category }}{% endif %}{% if query %}{% if category %}&amp;{% endif %}q={{ query|urlencode }}{% endif %}" class="{% if status == 'all' %}active{% endif %}">Barchasi <span>{{ counts.all }}</span></a>
+        <a href="?status=published{% if category %}&amp;category={{ category }}{% endif %}{% if query %}&amp;q={{ query|urlencode }}{% endif %}" class="{% if status == 'published' %}active{% endif %}">Nashr etilgan <span>{{ counts.published }}</span></a>
+        <a href="?status=draft{% if category %}&amp;category={{ category }}{% endif %}{% if query %}&amp;q={{ query|urlencode }}{% endif %}" class="{% if status == 'draft' %}active{% endif %}">Qoralama <span>{{ counts.draft }}</span></a>
+    </nav>
+    <div class="toolbar-actions">
+        <form method="get" class="search-inline">
+            {% if status != 'all' %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+            <select name="category" aria-label="Skill bo'yicha filtr" onchange="this.form.submit()">
+                <option value="">Barcha skilllar</option>
+                {% for value, label in categories %}
+                    <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input type="search" name="q" value="{{ query }}" placeholder="Kurs nomi...">
+            <button type="submit" class="btn btn-primary btn-sm">Qidirish</button>
+        </form>
+        <a href="{% url 'panel:course_create' %}" class="btn btn-primary btn-sm">➕ Kurs qo'shish</a>
+    </div>
+</div>
+
+<div class="panel-card flush">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Kurs</th>
+                    <th>Skill</th>
+                    <th>Holat</th>
+                    <th class="num">Yozilganlar</th>
+                    <th class="actions-col">Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in page_obj %}
+                <tr>
+                    <td class="title-col">
+                        <a class="cell-link" href="{% url 'panel:course_edit' c.pk %}"><strong>{{ c.title }}</strong></a>
+                        {% if c.is_new %}<span class="badge badge-green">Yangi</span>{% endif %}
+                        <div class="muted-sm">{{ c.level|capfirst }}{% if c.cefr_badge %} · {{ c.cefr_badge }}{% endif %} · {{ c.outcomes_count }} ta natija</div>
+                    </td>
+                    <td>{{ c.icon }} {{ c.get_category_display }}</td>
+                    <td>
+                        {% if c.is_published %}<span class="badge badge-green">Nashr etilgan</span>{% else %}<span class="badge badge-gray">Qoralama</span>{% endif %}
+                    </td>
+                    <td class="num">{{ c.students_count }}</td>
+                    <td class="actions-col">
+                        <div class="row-actions">
+                            <a class="act-btn" href="{% url 'panel:course_edit' c.pk %}" title="Tahrirlash" aria-label="Tahrirlash">{% include "panel/_icon.html" with name="edit" %}</a>
+                            <a class="act-btn" href="{{ c.get_absolute_url }}" target="_blank" rel="noopener" title="Saytda ko'rish" aria-label="Saytda ko'rish">{% include "panel/_icon.html" with name="external" %}</a>
+                            <form method="post" action="{% url 'panel:course_toggle_published' c.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                {% if c.is_published %}
+                                <button type="submit" class="act-btn" title="Yashirish" aria-label="Yashirish">{% include "panel/_icon.html" with name="hide" %}</button>
+                                {% else %}
+                                <button type="submit" class="act-btn" title="Nashr etish" aria-label="Nashr etish">{% include "panel/_icon.html" with name="publish" %}</button>
+                                {% endif %}
+                            </form>
+                            <form method="post" action="{% url 'panel:course_delete' c.pk %}" data-confirm="&quot;{{ c.title }}&quot; kursini o'chirishga ishonchingiz komilmi? Kursga yozilishlar ham o'chadi va bu amalni qaytarib bo'lmaydi.">
+                                {% csrf_token %}
+                                <button type="submit" class="act-btn act-danger" title="O'chirish" aria-label="O'chirish">{% include "panel/_icon.html" with name="trash" %}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-row">Kurslar topilmadi.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "panel/_pagination.html" %}
+{% endblock %}

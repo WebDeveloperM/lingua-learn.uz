@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Sent · {{ test.title }} | Learn English{% endblock %}
+
+{% block content %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{{ course.get_absolute_url }}">← {{ course.get_category_display }} practice</a>
+            <h1 class="exercise-title">{{ test.title }} <small class="wt-title-meta">· {{ test.date|date:"j M Y" }} · {{ test.get_shift_display }}</small></h1>
+
+            <section class="ready-card">
+                <h2>✅ Sent to your teacher</h2>
+                <p class="ready-meta">{{ submission.sent_at|date:"j M Y, H:i" }} · {{ submission.total_words }} word{{ submission.total_words|pluralize }} in total{% if submission.time_used %} · Time used: {{ submission.time_used }}{% endif %}</p>
+                <p>Your teacher will check your writing. Here is a copy of what you sent.</p>
+            </section>
+
+            {% for answer in answers %}
+            <section class="wt-card wt-sent-card">
+                <h2 class="wt-card-title">{{ answer.label }} <small>· {{ answer.word_count }} word{{ answer.word_count|pluralize }}</small></h2>
+                {% if answer.text %}
+                <p class="wt-text">{{ answer.text|linebreaksbr }}</p>
+                {% else %}
+                <p class="q-skipped">You did not write anything for this task.</p>
+                {% endif %}
+            </section>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

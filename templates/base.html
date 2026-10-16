@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Learn English{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<script src="{% static 'js/password-toggle.js' %}" defer></script>
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a href="{% url 'core:home' %}" class="logo">
+            <span class="logo-badge">A</span> Learn <span class="logo-accent">English</span>
+        </a>
+        <nav class="main-nav">
+            <a href="{% url 'core:home' %}">Bosh sahifa</a>
+            <a href="{% url 'courses:course_list' %}">Kurslar</a>
+        </nav>
+        <div class="header-actions">
+            {% if user.is_authenticated %}
+                <span class="hello-user">Salom, {{ user.first_name|default:user.email }}</span>
+                {% if user.is_admin %}
+                    <a href="{% url 'panel:dashboard' %}" class="btn btn-primary btn-sm">Boshqaruv paneli</a>
+                {% endif %}
+                <a href="{% url 'accounts:logout' %}" class="btn btn-outline btn-sm">Chiqish</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline btn-sm">Kirish</a>
+                <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Ro'yxatdan o'tish</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+{% if messages %}
+<div class="container">
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <div class="logo"><span class="logo-badge">A</span> Learn <span class="logo-accent">English</span></div>
+            <p class="muted">Grammatika, lug'at, reading, writing, speaking va listening — barcha skilllarni bir joyda o'rganing.</p>
+        </div>
+        <div>
+            <h4>Havolalar</h4>
+            <a href="{% url 'core:home' %}">Bosh sahifa</a>
+            <a href="{% url 'courses:course_list' %}">Kurslar</a>
+        </div>
+        <div>
+            <h4>Akkount</h4>
+            <a href="{% url 'accounts:login' %}">Kirish</a>
+            <a href="{% url 'accounts:register' %}">Ro'yxatdan o'tish</a>
+        </div>
+    </div>
+    <p class="copyright">© {% now "Y" %} Learn English. Barcha huquqlar himoyalangan.</p>
+</footer>
+</body>
+</html>

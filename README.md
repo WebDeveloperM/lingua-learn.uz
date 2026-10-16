@@ -1,0 +1,284 @@
+# Learn English — Onlayn ingliz tili kurslari platformasi
+
+Django asosida qurilgan onlayn ingliz tili kurslari platformasi. Grammatika, lug'at,
+reading, writing, speaking va listening skillari bo'yicha kurslar, admin tomonidan
+faollashtiriladigan ro'yxatdan o'tish va kurslar katalogi.
+
+## Loyiha tuzilishi
+
+- `config/` — Django sozlamalari (settings, urls)
+- `accounts/` — foydalanuvchilar (email orqali kirish), ro'yxatdan o'tish
+- `courses/` — kurslar, learning outcomes, skill teglari, enrollment
+- `panel/` — adminlar uchun boshqaruv paneli (`/panel/`)
+- `core/` — bosh sahifa
+- `templates/` — barcha HTML shablonlar
+- `static/css/style.css` — asosiy dizayn
+
+## Docker orqali ishga tushirish (tavsiya etiladi)
+
+```bash
+# Build qilish va fonda ishga tushirish (migratsiyalar avtomatik bajariladi)
+docker compose up -d --build
+
+# Birinchi marta: namuna kurslar va admin yaratish
+docker compose exec web python manage.py seed_courses
+docker compose exec web python manage.py createsuperuser
+
+# Loglarni ko'rish / to'xtatish
+docker compose logs -f web
+docker compose down
+```
+
+**Kod yozayotganda** `docker compose watch` dan foydalaning — o'zgargan fayllar
+qayta build qilmasdan konteynerga avtomatik ko'chiriladi va Django o'zi qayta yuklanadi.
+`requirements.txt` o'zgarsa, image avtomatik qayta build qilinadi.
+
+Ma'lumotlar bazasi (SQLite) va yuklangan fayllar `app_data` Docker volume'ida saqlanadi,
+shuning uchun konteyner qayta yaratilganda ham yo'qolmaydi. Volume'ni ham o'chirish
+uchun: `docker compose down -v` (ehtiyot bo'ling — barcha ma'lumotlar o'chadi).
+
+## Docker'siz o'rnatish (lokal)
+
+```bash
+# 1. Virtual environment faollashtirish
+venv\Scripts\activate          # Windows cmd/PowerShell
+source venv/Scripts/activate   # Git Bash
+
+# 2. Kutubxonalarni o'rnatish (agar kerak bo'lsa)
+pip install -r requirements.txt
+
+# 3. Migratsiyalarni qo'llash
+python manage.py migrate
+
+# 4. Superuser yaratish (admin panel uchun)
+python manage.py createsuperuser
+
+# 5. Namuna kurslarni yuklash (ixtiyoriy)
+python manage.py seed_courses
+
+# 6. Serverni ishga tushirish
+python manage.py runserver
+```
+
+Sayt: http://127.0.0.1:8000/
+Admin panel: http://127.0.0.1:8000/admin/
+
+## Hozirgi admin (demo)
+
+- Email: `admin@example.com`
+- Parol: `admin12345`
+
+Sayt ham, admin panel ham **email + parol** bilan kiradi (login/username yo'q).
+Yangi admin yaratganda `createsuperuser` email va parol so'raydi va unga avtomatik
+**Admin** roli beriladi.
+
+**Production'ga chiqarishdan oldin bu parolni albatta almashtiring.**
+
+## Rollar
+
+| Rol | Kirgach ochiladi | Imkoniyatlari |
+|---|---|---|
+| **O'quvchi** (`student`) | `/courses/` | Kurslarni ko'rish, kursga yozilish |
+| **Admin** (`admin`) | `/panel/` | Boshqaruv paneli (quyida), saytni ham ko'ra oladi |
+
+- Ro'yxatdan o'tganlar doim **O'quvchi** bo'ladi (formada rol tanlanmaydi).
+- Rolni o'zgartirish: `/admin/` → Users → **Role** maydoni (yoki yangi admin uchun `createsuperuser`).
+- Admin sayt sarlavhasida **Boshqaruv paneli** tugmasini ko'radi. O'quvchi `/panel/` ga
+  kirishga uringanda 403 ("Ruxsat yo'q") sahifasi chiqadi.
+
+## Boshqaruv paneli (`/panel/`)
+
+- **Dashboard** — o'quvchilar soni, faollashtirish kutayotganlar, kurslar, yozilishlar,
+  tugatilgan kurslar; kutayotgan o'quvchilarni shu yerning o'zida faollashtirish; top 5 o'quvchi.
+- **O'quvchilar** — qidiruv (ism/familiya/email), holat bo'yicha filtr (Faol / Kutilmoqda),
+  faollashtirish yoki faolsizlantirish, o'chirish. O'quvchi sahifasida yozilgan kurslari va
+  har bir kurs bo'yicha **progress (0–100%)** ni o'zgartirish mumkin.
+- **Reyting** — faol o'quvchilar **ball** bo'yicha tartiblanadi. Ball = o'quvchi yozilgan
+  barcha kurslardagi progress foizlari yig'indisi. Ball va tugatilgan kurslar soni bir xil
+  bo'lsa, o'rin ham bir xil.
+- **Kurslar** — ro'yxat (holat, skill, qidiruv), nashr etish/yashirish, o'chirish.
+- **Kurslar ro'yxatidagi amallar** — ikonkalar: ✏️ tahrirlash, ↗ saytda ko'rish, 👁 yashirish /
+  ☁ nashr etish, 🗑 o'chirish (nomi sichqoncha ustiga olib borilganda ko'rinadi; o'chirishdan oldin so'raladi).
+- **Kurs qo'shish / tahrirlash** — nomi, skill, daraja, CEFR nishoni, tavsiflar, o'quv
+  natijalari ro'yxati, ko'nikma teglari, nashr etish va «YANGI» belgisi. Nashr etilmagan
+  (qoralama) kursni faqat adminlar saytda oldindan ko'ra oladi. Yangi kurs saqlangach uning
+  tahrirlash sahifasi ochiladi: u yerda **Mashqlar (Practice)** bo'limi (pastda) bor.
+  «Kurs tavsifi», «O'quv natijalari» va «Ko'nikma teglari» bo'limlari `templates/panel/course_form.html` dan
+  olib tashlangan (yoki izohga olingan) bo'lsa ham saqlash ishlaydi: sahifa yubormagan bo'limlar va matnlar
+  o'zgarmay qoladi.
+
+Panelni sinab ko'rish uchun namuna o'quvchilar yaratish va o'chirish:
+
+```bash
+docker compose exec web python manage.py seed_demo_students
+docker compose exec web python manage.py seed_demo_students --delete
+```
+
+Panel ro'yxatidagi **Yozilganlar** — haqiqiy yozilishlar soni. Kurs sahifasidagi
+"16,358 Enrolled" kabi sonlar `seed_courses` bergan demo qiymatlar.
+
+## Testlar
+
+```bash
+python manage.py test                           # lokal
+docker compose exec web python manage.py test   # Docker'da
+```
+
+## Ro'yxatdan o'tish va akkountni faollashtirish
+
+1. Foydalanuvchi `/accounts/register/` sahifasida ism, familiya, tug'ilgan kun, email,
+   va parolni kiritadi (alohida login yo'q — email login vazifasini bajaradi).
+2. Akkount nofaol (`is_active=False`) holatda yaratiladi va foydalanuvchiga
+   "Akkountingizni faollashtirish uchun adminga murojaat qiling" xabari admin
+   Telegram linki bilan ko'rsatiladi.
+3. Admin `/panel/` → **O'quvchilar** (yoki dashboard) bo'limida **Faollashtirish**
+   tugmasini bosadi (`/admin/` → Users → **Active** katakchasi ham ishlaydi).
+4. Shundan so'ng foydalanuvchi email va parol bilan to'g'ridan-to'g'ri kiradi.
+   Faollashtirilmagan akkount bilan kirishga uringanda ham shu xabar ko'rsatiladi.
+
+Admin Telegram linkini `.env` faylida belgilang:
+
+```
+ADMIN_TELEGRAM_URL=https://t.me/username
+```
+
+Docker'da `.env` o'zgargandan keyin konteynerni qayta yarating: `docker compose up -d`.
+
+## Kurslar
+
+Kurslar boshqaruv panelidan (`/panel/courses/`) qo'shiladi va tahrirlanadi:
+sarlavha, kategoriya (grammar/vocabulary/reading/writing/speaking/listening), daraja,
+qisqa tavsif, learning outcomes, skill teglari va boshqalar.
+
+`python manage.py seed_courses` buyrug'i 6 ta namuna kursni (har bir skill bo'yicha
+bittadan) avtomatik qo'shadi — rasmlardagi "Health and Wellness with Mixed
+Conditionals" kursi ham shular jumlasidan. Buyruq kurslarni **nomi bo'yicha** topadi,
+shuning uchun kurs nomlarini o'zgartirgandan keyin uni qayta ishga tushirmang (dublikat yaratadi).
+
+## Practice sahifasi (Part va mashqlar)
+
+Kursda **Part**lar bo'lsa, kurs sahifasi o'rniga mashq sahifasi ochiladi. Part'i yo'q
+kurslar avvalgi sahifani ko'rsatadi. Hozir ikkita kursda Part'lar bor.
+
+**Listening** (6 ta Part):
+
+| Part | Nomi | Mashqlar |
+|---|---|---|
+| 1 | Short replies | 10 |
+| 2 | Gap filling | 11 |
+| 3 | Speakers | 10 |
+| 4 | Map labelling | 11 |
+| 5 | Extracts | 10 |
+| 6 | Lecture notes | 10 |
+
+**Reading** (5 ta Part, har birida 10 ta mashq): ✍️ Part 1 · Gap filling, 🔗 Part 2 · Matching,
+🏷️ Part 3 · Headings, ✅ Part 4 · Multiple choice & True / False, 🧩 Part 5 · Summary & questions.
+Barcha 5 Part tayyor (pastda): Part 1 (matndagi bo'sh joylar, 1–6), Part 2 (7–14, gap-variantlar ro'yxati),
+Part 3 (15–20, sarlavhalar ro'yxati), Part 4 (21–29, matn va A–D / True-False savollari), Part 5 (30–35,
+matndagi bo'sh joylar 30–33 va test savollari 34–35).
+
+- Har bir mashq katakchasida «Exercise» va raqami bor; o'quvchi mashqni bajargan bo'lsa,
+  natijasi ham ko'rinadi (**⭐ 0/8**). Har bir Part'da «Key vocabulary · 50 words» belgisi bor.
+- Part va mashqlarni yaratish: `docker compose exec web python manage.py seed_listening_parts` yoki
+  `seed_reading_parts` (qayta ishga tushirish xavfsiz: mavjud Part'larni o'zgartirmaydi, faqat yetishmaganini qo'shadi).
+  Reading uchun Part 1 mashqlari 8 daqiqa bilan yaratiladi.
+- Part nomi va mashq sonini `/admin/` → **Parts** bo'limida o'zgartirish mumkin.
+- Mashq katakchasini bosganda mashq sahifasi ochiladi (kirish talab qilinadi):
+  1. **Ready to start?** — «1 part · 8 questions · 5 minutes» va **Start exercise 🚀** tugmasi;
+  2. mashq sahifasi — taymer (oxirgi 3 daqiqada qizil), **Pause**, audio pleyer va savollar (turiga qarab);
+  3. **Submit all parts** bosilganda avval ogohlantirish chiqadi («You still have 8 unanswered questions.
+     Submit all parts now? You cannot change answers after this.» — **Yes, submit** / **Keep working**).
+     Vaqt tugasa, javoblar so'ralmasdan o'zi yuboriladi;
+  4. natijalar sahifasi (Reading'da audio va Transcript o'rniga javoblar bilan matn chiqadi):
+     «💪 Keep going! 3 / 8 correct (38%) · Time used: 01:05», **Try again** va
+     **More exercises** tugmalari, **All answers** jadvali (har savol uchun sizning javobingiz va to'g'ri javob),
+     **Transcript** (audio matni, to'g'ri javoblar sariq rangda — admin kiritgan bo'lsa), audio pleyer va har bir
+     savol to'g'ri javobi belgilangan holda. Eng yaxshi natija katakchada ⭐ bilan ko'rinadi.
+- Mazmuni to'ldirilmagan mashqda Start tugmasi o'chirilgan va «not ready yet» yozuvi chiqadi.
+- Tugma matni **Submit all parts**. Savol raqamlari Part'lar bo'ylab davom etadi.
+
+### Part turlari
+
+Har bir Part'ning o'z **turi** bor (Part sahifasidagi «Mashq turi»), u savollar ko'rinishini va
+tekshirilishini belgilaydi. «Birinchi savol raqami» shu Part savollari qaysi raqamdan boshlanishini aytadi.
+
+| Part | Tur | Savollar | Qanday ko'rinadi |
+|---|---|---|---|
+| 1 · Short replies | Variantlardan tanlash | 1–8 | har savolda A, B, C variantlari (radio) |
+| 2 · Gap filling | Eshitib yozish | 9–14 | sarlavha (masalan «Video game review») va bo'sh joylar: oldingi/keyingi matn + yozish maydoni |
+| 3 · Speakers | Ro'yxatdan tanlash | 15–18 | variantlar ro'yxati (A–F) va har savolda «Choose an answer...» ro'yxati |
+| 4 · Map labelling | Xaritada belgilash | 19–23 | audio, ko'rsatma va xarita rasmi; har joy nomi («Gift shop») ostida A–I harf tugmalari |
+| 5 · Extracts | Variantlardan tanlash | 24–29 | har savolda A, B, C; savoldan oldin «Extract One · You hear...» kartochkasi, savol raqami matn bilan bir qatorda |
+| 6 · Lecture notes | Eshitib yozish | 30–35 | sarlavha («Labyrinths»), gapli qatorlar va ular orasida gapsiz oddiy qator («Labyrinths represent a journey through life.») |
+| Reading 1 · Gap filling | Matndagi bo'sh joylar | 1–6 | audiosiz: sarlavha («Olivia»), katta matn va uning jumlalari ichida «(Q1) 1 [yozish maydoni]» |
+| Reading 2 · Matching | Ro'yxatdan tanlash | 7–14 | audiosiz: «Each statement is used once. Two are extra!», A–J ro'yxati va har abzas ostida «Choose an answer...» |
+| Reading 3 · Headings | Ro'yxatdan tanlash | 15–20 | audiosiz: sarlavha («Pedestrian Zones and Their Growth»), A–H sarlavhalar ro'yxati; har abzas «15. Paragraph I» qalin yozuvi va matni bilan |
+| Reading 4 · Multiple choice & True / False | Variantlardan tanlash (matn bilan) | 21–29 | audiosiz: «Read the following text for questions 21-29.», sarlavha («Eating meat»), abzaslar; undan keyin «Questions 21-24: choose the correct answer A, B, C or D.» kartochkasi va A–D savollari |
+| Reading 5 · Summary & questions | Matn: bo'sh joylar + test | 30–35 | audiosiz: matn ichida «(Q30) 30 [yozish maydoni]» (30–33), undan keyin test savollari 34–35 |
+
+Eshitib yozishda javob katta-kichik harfga va ortiqcha probellarga e'tibor bermay tekshiriladi.
+Bir nechta javob qabul qilinsa, ularni `/` bilan ajrating (`space station / futuristic city`).
+Part'ning turini faqat uning mashqlarida savollar bo'lmaganda o'zgartirish mumkin.
+
+Har bir Part'da **«Mashqdagi savollar soni»** bor (Part sahifasida): yangi mashqning muharriri shuncha
+savol qatori bilan ochiladi (Part 5 da 6 ta: 24–29, Part 6 da 6 ta: 30–35). Bo'sh qoldirilsa, turiga qarab
+olinadi (A, B, C — 8, eshitib yozish — 6, ro'yxatdan tanlash — 4, xarita — 5). Ortiqcha bo'sh qator
+ko'rsatilmaydi; ko'proq savol kerak bo'lsa, «+ Savol qo'shish» tugmasi bor.
+
+`seed_listening_parts` Part 4, 5 va 6 ni shu formatga (hamda ularning umumiy ko'rsatmalari va savollar
+soniga) o'tkazadi, lekin faqat hali tahrirlanmagan va savollari yo'q Part'larni: admin o'zgartirgan
+Part'larga tegmaydi.
+
+### Mashqni admin paneldan to'ldirish
+
+`/panel/courses/` → kursni **Tahrirlash** → pastdagi **Mashqlar (Practice)** bo'limi:
+
+1. **Part qo'shish** (raqami, nomi, belgisi, turi, birinchi savol raqami, mashqdagi savollar soni,
+   «Key vocabulary» so'zlari soni, umumiy ko'rsatma; ko'rsatmada `**so'z**` qalin bo'ladi). Yangi Part
+   uchun savol raqami avvalgi Part'ning oxiridan taklif qilinadi.
+2. Part sahifasida **Mashq qo'shish**.
+3. Mashq sahifasida **audio fayl** yuklang (mp3, wav, ogg, m4a, aac · 30 MB gacha), davomiylikni
+   (daqiqa) kiriting va savollarni qo'shing. Audio va kamida 1 ta savol bo'lsa, mashq **Tayyor** bo'ladi.
+   - **Variantlardan tanlash:** har savolda 3 ta variant (A, B, C) va to'g'ri javob; savol matni ixtiyoriy.
+   - **Matndagi bo'sh joylar (Reading):** audio kerak emas. «Matn (Passage)» maydoniga katta matnni yozing yoki
+     qo'ying va o'quvchi yozishi kerak bo'lgan so'zlarni `[[ikkita kvadrat qavs]]` ichiga oling, masalan
+     `Although the [[town]] was small`. O'quvchida u o'rnida «(Q1) 1 [yozish maydoni]» chiqadi; har bir bo'sh joy
+     bitta savol bo'lib saqlanadi (saqlagandan keyin «Bo'sh joylar» ro'yxatida ko'rinadi). Bir nechta javob
+     qabul qilinsa `[[town / city]]`; abzaslar bo'sh qator bilan ajratiladi (oddiy Enter bo'sh joy sifatida
+     o'qiladi, shuning uchun PDF'dan ko'chirilgan matn bir tekis oqadi; bo'sh joydan oldin yozilgan «1.» yoki
+     «(Q1)» kabi raqam ikki marta chiqmasligi uchun o'quvchiga ko'rsatilmaydi). Natijalar sahifasida matn
+     o'quvchining javoblari va to'g'ri javoblar bilan (`→ town`) qayta chiqadi. Matn va kamida 1 ta bo'sh joy bo'lsa,
+     mashq **Tayyor** bo'ladi.
+   - **Matn + savollar (Reading Part 4):** «Sarlavha» va «Matn (Passage)» maydonlariga o'qiladigan matnni yozing
+     (abzaslar bo'sh qator bilan), savollarni esa «Variantlardan tanlash» kabi kiriting: har birida A, B, C va
+     ixtiyoriy D varianti. True / False / Not given savollari uchun A, B, C ga shu so'zlarni yozing. «Oldingi
+     sarlavha» maydoniga `**Questions 21-24:** choose the correct answer A, B, C or D.` kabi matn yozsangiz,
+     u shu savoldan oldin alohida kartochkada chiqadi.
+   - **Matn: bo'sh joylar + test (Reading Part 5):** matnni `[[so'z]]` belgilari bilan yozing (30–33 shu yerdan olinadi),
+     pastdagi «Test savollar» qatorlariga 34–35-savollarni (A–D) kiriting. Bo'sh joylar soni o'zgarsa,
+     test savollar raqami avtomatik siljiydi. Part sahifasidagi «Mashqdagi savollar soni» bu turda faqat test
+     savollar sonini bildiradi (34–35 uchun 2).
+   - **Eshitib yozish:** «Sarlavha» maydoniga matn sarlavhasi; har qatorda sarlavha, oldingi/keyingi
+     matn va to'g'ri javob(lar). Gapsiz oddiy qator kerak bo'lsa (masalan «Labyrinths represent a journey
+     through life.»), uni keyingi qatorning birinchi maydoniga yozing: u shu qatordan oldin alohida satrda
+     chiqadi va raqam olmaydi.
+   - **Ro'yxatdan tanlash:** «Variantlar ro'yxati» ga har qatorga bittadan variant (harflar avtomatik, 10 tagacha),
+     har savol uchun matn (masalan «Speaker 1» yoki butun abzas) va to'g'ri javob harfi. Ixtiyoriy «Sarlavha»
+     maydoni variantlar ro'yxati tepasida qalin chiqadi (Headings uchun), savoldagi ixtiyoriy qalin sarlavha esa
+     (masalan «Paragraph I») raqam yonida qalin yoziladi, abzas matni uning ostida chiqadi.
+   - **Xaritada belgilash:** «Xarita» bo'limida rasm yuklang (png, jpg, gif, webp · 8 MB gacha; A, B, C...
+     harflari rasmning o'zida bo'lishi kerak) va «Javob harflari soni»ni kiriting (9 = A–I). Har savol uchun
+     joy nomi (masalan «Gift shop») va xaritadagi to'g'ri harf. Audio, rasm, kamida 2 ta harf va 1 ta savol
+     bo'lsa, mashq **Tayyor** bo'ladi.
+   - **Variantlardan tanlash** savollarida ixtiyoriy «Oldingi sarlavha» maydoni bor: u shu savoldan oldin
+     alohida kartochkada chiqadi (Part 5 uchun, masalan `**Extract One** · You hear part of an interview...`).
+   - «Shu mashq uchun ko'rsatma» maydoni ixtiyoriy: bo'sh qolsa, Part'ning umumiy ko'rsatmasi chiqadi.
+   - **Transcript** (barcha turlarda, ixtiyoriy): audio matni. O'quvchi natijalarni ko'rganda «Transcript»
+     bo'limida chiqadi (mashq vaqtida ko'rinmaydi). Abzaslar bo'sh qator bilan ajratiladi; to'g'ri javobli
+     joylarni `**ikkita yulduzcha**` ichiga oling — ular sariq rangda ajralib turadi. Bo'sh qoldirilsa,
+     Transcript bo'limi chiqmaydi.
+
+Audio va xarita rasmlari `MEDIA_ROOT` da (Docker'da `app_data` volume'ida) saqlanadi va faqat
+kirgan foydalanuvchilarga `/courses/audio/<id>/` va `/courses/image/<id>/` orqali beriladi (Range
+qo'llab-quvvatlanadi, shuning uchun pleyerda oldinga-orqaga surish ishlaydi). Mashq yoki Part o'chirilsa
+(yoki audio/rasm almashtirilsa), eski fayl ham o'chadi.

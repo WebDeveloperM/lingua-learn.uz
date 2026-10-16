@@ -1,0 +1,90 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{% if part %}Part {{ part.number }}{% else %}Part qo'shish{% endif %}{% endblock %}
+{% block page_title %}{% if part %}Part {{ part.number }} · {{ part.name }}{% else %}Yangi Part qo'shish{% endif %}{% endblock %}
+
+{% block content %}
+<a href="{% url 'panel:course_edit' course.pk %}" class="back-link">← {{ course.title }}</a>
+
+<div class="form-layout">
+    <div class="form-main">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <section class="panel-card">
+                <header class="card-head"><h2>Part ma'lumotlari</h2></header>
+                {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+                <div class="form-grid-2">
+                    {% include "panel/_field.html" with field=form.number %}
+                    {% include "panel/_field.html" with field=form.icon %}
+                </div>
+                {% include "panel/_field.html" with field=form.name %}
+                <div class="form-grid-2">
+                    {% include "panel/_field.html" with field=form.kind %}
+                    {% include "panel/_field.html" with field=form.first_question_number %}
+                </div>
+                {% include "panel/_field.html" with field=form.questions_count %}
+                {% include "panel/_field.html" with field=form.key_words_count %}
+                {% include "panel/_field.html" with field=form.instructions %}
+                <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                    <a href="{% url 'panel:course_edit' course.pk %}" class="btn btn-ghost">Bekor qilish</a>
+                </div>
+            </section>
+        </form>
+
+        {% if part %}
+        <section class="panel-card">
+            <header class="card-head">
+                <h2>Mashqlar</h2>
+                <form method="post" action="{% url 'panel:exercise_add' part.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-sm">➕ Mashq qo'shish</button>
+                </form>
+            </header>
+            {% if exercises %}
+            <ul class="admin-ex-grid">
+                {% for e in exercises %}
+                <li>
+                    <a class="admin-ex" href="{% url 'panel:exercise_edit' e.pk %}">
+                        <span class="admin-ex-label">Exercise</span>
+                        <span class="admin-ex-num">{{ e.number }}</span>
+                        {% if e.is_ready %}<span class="badge badge-green">Tayyor</span>{% else %}<span class="badge badge-gray">Bo'sh</span>{% endif %}
+                        <span class="muted-sm">{{ e.question_count }} savol{% if e.audio %} · 🎧{% endif %}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="muted-sm" style="margin:14px 0 0;">
+                {% if part.kind == 'passage_gap' or part.kind == 'passage_mixed' %}
+                    Mashq matni va kamida 1 ta bo'sh joy ([[so'z]]) kiritilgach «Tayyor» bo'ladi.
+                {% elif part.kind == 'map' %}
+                    Mashq audio, xarita rasmi, kamida 2 ta javob harfi va kamida 1 ta savol kiritilgach «Tayyor» bo'ladi.
+                {% elif part.kind == 'matching' %}
+                    Mashq {% if part.needs_audio %}audio, {% endif %}kamida 2 ta variant va kamida 1 ta savol kiritilgach «Tayyor» bo'ladi.
+                {% elif part.needs_audio %}
+                    Mashq audio va kamida 1 ta savol kiritilgach «Tayyor» bo'ladi.
+                {% else %}
+                    Mashq kamida 1 ta savol kiritilgach «Tayyor» bo'ladi.
+                {% endif %}
+            </p>
+            {% else %}
+            <p class="empty-note">Bu Part'da hali mashq yo'q. «Mashq qo'shish» tugmasini bosing.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+    </div>
+
+    {% if part %}
+    <aside class="form-side">
+        <section class="panel-card">
+            <header class="card-head"><h2>Xavfli amal</h2></header>
+            <p class="muted-sm" style="margin-top:-6px;">Part o'chirilsa, uning barcha mashqlari, audiolari va savollari ham o'chadi.</p>
+            <form method="post" action="{% url 'panel:part_delete' part.pk %}" data-confirm="Part {{ part.number }} · {{ part.name }} o'chirilsinmi? Uning mashqlari, audiolari va savollari ham o'chadi. Bu amalni qaytarib bo'lmaydi.">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-block">Partni o'chirish</button>
+            </form>
+        </section>
+    </aside>
+    {% endif %}
+</div>
+{% endblock %}

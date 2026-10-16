@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}How to write | {{ course.get_category_display }} | Learn English{% endblock %}
+
+{% block content %}
+<section class="practice-section">
+    <div class="container">
+        <div class="exercise-wrap">
+            <a class="pill-btn" href="{{ course.get_absolute_url }}">← {{ course.get_category_display }} practice</a>
+            <h1 class="exercise-title">📘 How to write Task 1.1, 1.2 and Part 2</h1>
+
+            <section class="wt-card">
+                <h2 class="wt-card-title">Task 1.1 <small>· informal e-mail to a friend, about 50 words</small></h2>
+                <p class="wt-guide-note">Structure and useful phrases, with Uzbek translation.</p>
+                {% include "writing/_phrases.html" with groups=groups interactive=False %}
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}

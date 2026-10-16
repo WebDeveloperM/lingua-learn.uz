@@ -1,0 +1,7 @@
+<a href="{{ course.get_absolute_url }}" class="course-card">
+    {% if course.is_new %}<span class="new-badge">Yangi</span>{% endif %}
+    <span class="course-card-icon" aria-hidden="true">{{ course.icon }}</span>
+    <h3>{{ course.title }}</h3>
+    <p>{{ course.short_description|truncatewords:12 }}</p>
+    <span class="course-card-link">Kursni ochish →</span>
+</a>

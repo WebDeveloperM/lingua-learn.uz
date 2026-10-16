@@ -1,0 +1,44 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Reyting{% endblock %}
+{% block page_title %}O'quvchilar reytingi{% endblock %}
+
+{% block content %}
+<p class="page-note">
+    Ball — o'quvchi yozilgan barcha kurslardagi progress foizlarining yig'indisi (har bir kurs uchun 0–100).
+    Faqat faol o'quvchilar kiradi. Ball va tugatilgan kurslar soni bir xil bo'lsa, o'rin ham bir xil beriladi.
+    Progressni o'quvchi sahifasidan o'zgartirish mumkin.
+</p>
+
+<div class="panel-card flush">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="rank-cell">O'rin</th>
+                    <th>O'quvchi</th>
+                    <th class="num">Kurslar</th>
+                    <th class="num">Tugatilgan</th>
+                    <th class="num">Ball</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="rating-row{% if row.rank <= 3 %} rank-{{ row.rank }}{% endif %}">
+                    <td class="rank-cell">{% if row.rank == 1 %}🥇{% elif row.rank == 2 %}🥈{% elif row.rank == 3 %}🥉{% else %}{{ row.rank }}{% endif %}</td>
+                    <td>
+                        <a class="cell-link" href="{% url 'panel:student_detail' row.student.pk %}"><strong>{{ row.student.get_full_name|default:row.student.email }}</strong></a>
+                        <div class="muted-sm">{{ row.student.email }}</div>
+                    </td>
+                    <td class="num">{{ row.student.courses_count }}</td>
+                    <td class="num">{{ row.student.completed_count }}</td>
+                    <td class="num score-cell">{{ row.student.score }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-row">Reytingda ko'rsatish uchun faol o'quvchilar yo'q.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

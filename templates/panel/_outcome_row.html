@@ -1,0 +1,9 @@
+<div class="formset-row" data-row {% if f.DELETE.value %}hidden{% endif %}>
+    {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+    <div class="row-field">
+        {{ f.text }}
+        {% if f.text.errors %}<div class="form-errors">{{ f.text.errors }}</div>{% endif %}
+    </div>
+    <span class="row-delete">{{ f.DELETE }}</span>
+    <button type="button" class="icon-btn" data-remove aria-label="Qatorni olib tashlash">×</button>
+</div>

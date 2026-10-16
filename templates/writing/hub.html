@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.get_category_display }} practice | Learn English{% endblock %}
+
+{% block content %}
+{% if not course.is_published %}
+<div class="draft-banner">Bu kurs hali nashr etilmagan (qoralama) — uni faqat adminlar ko'ra oladi.</div>
+{% endif %}
+<section class="practice-section">
+    <div class="container">
+        <div class="practice-wrap">
+            <h1 class="practice-title">{{ course.icon }} {{ course.get_category_display }} practice</h1>
+            <p class="practice-intro">Real exam tasks. Each test has Task 1.1, Task 1.2 and Part 2, with 60 minutes in total. Your teacher checks your answers and writes feedback.</p>
+
+            <section class="guide-card">
+                <div>
+                    <h2 class="guide-title"><span aria-hidden="true">📘</span> How to write Task 1.1, 1.2 and Part 2</h2>
+                    <p>Step-by-step structure and useful phrases for every task, with Uzbek translation.</p>
+                </div>
+                <a class="pill-btn" href="{% url 'writing:guide' course.slug %}">Open the guide</a>
+            </section>
+
+            <h2 class="wt-count">Tests · {{ tests|length }}</h2>
+            {% for month in months %}
+            <h3 class="wt-month">{{ month.month|date:"F Y" }}</h3>
+            <ul class="wt-list">
+                {% for test in month.tests %}
+                <li>
+                    <a class="wt-row" href="{% url 'writing:intro' course.slug test.pk %}">
+                        <span class="wt-date"><strong>{{ test.date|date:"j M" }}</strong><small>{{ test.get_shift_display }}</small></span>
+                        <span class="wt-info">
+                            <strong class="wt-name">{{ test.title }}</strong>
+                            {% if test.subtitle %}<span class="wt-sub">{{ test.subtitle }}</span>{% endif %}
+                        </span>
+                        {% if test.is_sent %}<span class="wt-sent">✓ Sent</span>{% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% empty %}
+            <p class="empty-note">No tests yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
