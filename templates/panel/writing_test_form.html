@@ -25,7 +25,7 @@
             {% for section in sections %}
             <section class="panel-card">
                 <header class="card-head"><h2>{{ section.label }} <small class="muted-sm">· {{ section.description }}</small></h2></header>
-                <p class="muted-sm" style="margin-top:-6px;">Hamma maydon bo'sh qolsa, bu topshiriq testda bo'lmaydi.</p>
+                <p class="muted-sm" style="margin-top:-6px;">{{ section.note }}</p>
                 {% for field in section.fields %}{% include "panel/_field.html" with field=field %}{% endfor %}
             </section>
             {% endfor %}

@@ -52,6 +52,11 @@ def _clean_seconds(raw, limit):
     return max(0, min(seconds, limit))
 
 
+def _clean_text(raw):
+    """The writing as the textarea holds it: browsers send line breaks as CRLF, the limit counts them once."""
+    return (raw or '').replace('\r\n', '\n').strip()[:MAX_TEXT_LENGTH].rstrip()
+
+
 def guide(request, slug):
     course = _writing_course(request, slug)
     return render(request, 'writing/guide.html', {'course': course, 'groups': guides.INFORMAL_EMAIL})
@@ -91,9 +96,7 @@ def send(request, slug, pk):
     if not tasks:
         raise Http404
 
-    texts = {
-        task.slot: (request.POST.get(f'answer_{task.slot}') or '').strip()[:MAX_TEXT_LENGTH] for task in tasks
-    }
+    texts = {task.slot: _clean_text(request.POST.get(f'answer_{task.slot}')) for task in tasks}
     if not any(texts.values()):
         messages.info(request, 'Nothing was sent: you did not write anything.')
         return redirect('writing:intro', slug=slug, pk=pk)

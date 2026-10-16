@@ -1017,7 +1017,7 @@ a.wt-row:hover, a.wt-row:focus-visible { transform: translateY(-2px); box-shadow
     white-space: nowrap;
 }
 .wt-title-meta { color: var(--ink-muted); font-size: 15px; font-weight: 600; }
-.wt-tasks { margin: 6px 0 12px; padding-left: 20px; color: var(--ink); font-size: 15px; line-height: 1.7; }
+.wt-tasks { margin: 6px 0 12px; padding-left: 20px; list-style: disc; color: var(--ink); font-size: 15px; line-height: 1.7; }
 
 .writing-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
 .writing-top .exercise-bar { margin-bottom: 0; }
@@ -1043,6 +1043,10 @@ a.wt-row:hover, a.wt-row:focus-visible { transform: translateY(-2px); box-shadow
 .wt-context { margin: 0 0 8px; color: var(--ink-muted); font-size: 12.5px; }
 .wt-text { margin: 0; color: var(--ink); font-size: 15px; line-height: 1.7; }
 .wt-instruction { margin: 0 0 12px; color: var(--ink-muted); font-size: 14.5px; font-weight: 700; line-height: 1.6; }
+/* Part 2: the bold task text with "Write 180–200 words." right under it in regular weight */
+.wt-task-text { margin-bottom: 12px; }
+.wt-task-text .wt-instruction { margin: 0; }
+.wt-words-line { margin: 0; color: var(--ink-muted); font-size: 14.5px; line-height: 1.6; }
 .wt-input {
     display: block;
     width: 100%;
@@ -1094,6 +1098,7 @@ button.phrase:hover, button.phrase:focus-visible { background: #dff3e8; outline:
 .wt-summary { margin: 0 0 12px; padding-left: 18px; color: var(--ink); font-size: 13.5px; line-height: 1.6; }
 .wt-guide-note { margin: -6px 0 10px; color: var(--ink-muted); font-size: 14px; }
 .wt-sent-card .wt-text { white-space: normal; }
+.wt-sent-top { margin-bottom: 16px; }
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 860px) {

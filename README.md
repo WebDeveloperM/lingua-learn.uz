@@ -8,7 +8,8 @@ faollashtiriladigan ro'yxatdan o'tish va kurslar katalogi.
 
 - `config/` — Django sozlamalari (settings, urls)
 - `accounts/` — foydalanuvchilar (email orqali kirish), ro'yxatdan o'tish
-- `courses/` — kurslar, learning outcomes, skill teglari, enrollment
+- `courses/` — kurslar, learning outcomes, skill teglari, enrollment, Part va mashqlar (Listening / Reading)
+- `writing/` — Writing testlari (Task 1.1, Task 1.2, Part 2), so'z sanagich va o'quvchi yuborgan ishlar
 - `panel/` — adminlar uchun boshqaruv paneli (`/panel/`)
 - `core/` — bosh sahifa
 - `templates/` — barcha HTML shablonlar
@@ -158,7 +159,8 @@ shuning uchun kurs nomlarini o'zgartirgandan keyin uni qayta ishga tushirmang (d
 ## Practice sahifasi (Part va mashqlar)
 
 Kursda **Part**lar bo'lsa, kurs sahifasi o'rniga mashq sahifasi ochiladi. Part'i yo'q
-kurslar avvalgi sahifani ko'rsatadi. Hozir ikkita kursda Part'lar bor.
+kurslar avvalgi sahifani ko'rsatadi. Hozir ikkita kursda Part'lar bor (Writing kursi esa Part o'rniga
+testlar bilan ishlaydi — pastdagi «Writing (testlar)» bo'limiga qarang).
 
 **Listening** (6 ta Part):
 
@@ -282,3 +284,42 @@ Audio va xarita rasmlari `MEDIA_ROOT` da (Docker'da `app_data` volume'ida) saqla
 kirgan foydalanuvchilarga `/courses/audio/<id>/` va `/courses/image/<id>/` orqali beriladi (Range
 qo'llab-quvvatlanadi, shuning uchun pleyerda oldinga-orqaga surish ishlaydi). Mashq yoki Part o'chirilsa
 (yoki audio/rasm almashtirilsa), eski fayl ham o'chadi.
+
+## Writing (testlar)
+
+**Writing** kursining kartochkasi Part/mashq o'rniga **Writing practice** sahifasini ochadi (`writing/` ilovasi).
+Har bir test — haqiqiy imtihon: **Task 1.1**, **Task 1.2** va **Part 2**, jami 60 daqiqa.
+
+1. **Writing practice** — «How to write Task 1.1, 1.2 and Part 2» qo'llanma kartochkasi (**Open the guide**) va
+   «Tests · N»: testlar oylar bo'yicha guruhlangan (OCTOBER 2025...), har qatorda sana va smena («18 Oct · 1-smena»),
+   test nomi va «Part 2: mavzu». Free/Paid belgisi yo'q; o'quvchi yuborgan testda «✓ Sent» chiqadi.
+2. Testni bosganda **intro** (kirish talab qilinadi): «Ready? ⏱ · 3 tasks · 60 minutes in total», topshiriqlar
+   ro'yxati va **Start writing 🚀**. Hali topshiriqlari kiritilmagan testda tugma o'chirilgan.
+3. **Yozish sahifasi**: tepada Task 1.1 / Task 1.2 / Part 2 tablari (har birida yozilgan so'zlar soni), taymer (60:00),
+   **Pause**; Task 1.1 va 1.2 da xat (kichik «kontekst» yozuvi + matn), qalin topshiriq va yozish maydoni.
+   **Part 2** da xat yo'q: faqat qalin topshiriq matni («You are participating in an online discussion...») va uning
+   tagida oddiy yozuvda «Write 180–200 words.» qatori, so'ng yozish maydoni. **← Previous / Next →** tugmalari va
+   **Send to my teacher**.
+4. **So'z sanagich**: yozish maydoni ostida «2 words», progress chizig'i va «target about 50 words».
+   So'z — bo'shliqsiz belgilar ketma-ketligi (`e-mail`, `don't` — bitta so'z). Maqsad: Task 1.1 — taxminan 50
+   (chiziq 45 dan sariqdan yashilga, 60 dan oshsa qizilga o'tadi), Task 1.2 — 120–150, Part 2 — 180–200.
+5. **📌 Structure and useful phrases · tap a phrase to add it** (Task 1.1): 6 guruh (Topic, About, Feelings,
+   Problem, Suggestions, Ending) × 3 ibora, har biri o'zbekcha tarjimasi bilan. Statik matn (`writing/guides.py`):
+   ibora bosilsa, yozish maydonidagi kursor o'rniga qo'shiladi. Namuna javob («👀 Sample answer») admin
+   kiritgan bo'lsagina chiqadi.
+6. **Send to my teacher** avval ogohlantirish kartochkasini ko'rsatadi (har topshiriq bo'yicha so'zlar soni va
+   «Yes, send» / «Keep writing»). Vaqt tugasa, yozilgan matn o'zi yuboriladi. Yuborishdan oldin sahifadan
+   chiqilsa, brauzer ogohlantiradi. Yuborilgan ish o'quvchiga «Sent to your teacher» sahifasida nusxa bo'lib
+   ko'rinadi; admin uni panelda ko'radi.
+
+**Admin paneldan:** `/panel/courses/` → Writing kursini **Tahrirlash** → **Writing testlar** bo'limi:
+
+- **Test qo'shish** — nomi (masalan «Travel Club»), sana, smena, «Part 2 mavzusi» (ro'yxatda «Part 2: ...» bo'lib
+  chiqadi), davomiylik (daqiqa) va 3 ta topshiriq. **Task 1.1 va Task 1.2** da: **Topshiriq** (qalin; shu maydon
+  majburiy), **Kontekst** (xat tepasidagi kichik yozuv), **Xat / matn** (xatning o'zi, qator uzilishlari saqlanadi)
+  va ixtiyoriy **Namuna javob**. **Part 2** da faqat **Topshiriq** bor: u qalin yoziladi, tagidan «Write 180–200 words.»
+  qatori o'zi qo'shiladi (matn oxiriga shu gapni o'zingiz yozsangiz ham ikki marta chiqmaydi); Part 2 da xat,
+  kontekst va namuna javob yo'q. Topshiriqning hamma maydonlari bo'sh qolsa, u testda bo'lmaydi.
+- **Yuborilgan ishlar** — o'quvchilar yuborgan ishlar (so'zlar soni va yozish vaqti bilan), ishni ochganda har
+  topshiriq matni topshirig'i bilan birga ko'rinadi. Hozircha o'qituvchi izohi (feedback) yozish yo'q.
+- Testni o'chirsangiz, uning topshiriqlari va o'quvchilar yuborgan ishlar ham o'chadi.

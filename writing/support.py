@@ -19,6 +19,10 @@ TRAVEL_INSTRUCTION = (
     "Write a short email to your friend (who is also a member of the travel club). Say what city you'd like to visit, "
     'when, and whether you want to go with your family. Write about 50 words.'
 )
+DISCUSSION_TASK = (
+    'You are participating in an online discussion for language learners. The question is: “Some people say a '
+    'vegetarian diet is better for health. Do you agree?” Post your response, giving reasons and examples.'
+)
 
 
 def make_writing_course(**extra):
@@ -29,7 +33,7 @@ def make_test(
     course, title='Travel Club', when=date(2025, 10, 18), shift=1, topic='Is a vegetarian diet better for health?',
     slots=(Slot.TASK_11, Slot.TASK_12, Slot.PART_2), **extra,
 ):
-    """A test with the requested tasks; Task 1.1 is the Travel Club e-mail of the reference."""
+    """A test with the requested tasks; Task 1.1 is the Travel Club e-mail and Part 2 the discussion of the reference."""
     test = WritingTest.objects.create(course=course, title=title, date=when, shift=shift, topic=topic, **extra)
     for slot in slots:
         if slot == Slot.TASK_11:
@@ -41,9 +45,5 @@ def make_test(
                 prompt='Dear student,\nPlease tell us how the course could improve.',
                 instruction='Write a formal e-mail to the head. Write 120–150 words.')
         else:
-            WritingTask.objects.create(
-                test=test, slot=slot, context='You are reading an online discussion.',
-                prompt='Anna: Is a vegetarian diet better for health?\nBen: I do not think so.',
-                instruction='Write your opinion for the discussion. Write 180–200 words.',
-                sample_answer='In my opinion a vegetarian diet can be healthy.\n\nHowever, ...')
+            WritingTask.objects.create(test=test, slot=slot, instruction=DISCUSSION_TASK)
     return test

@@ -1,8 +1,9 @@
 import re
 from datetime import date
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.test import SimpleTestCase, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from accounts.models import Role, User
@@ -10,7 +11,9 @@ from courses.models import Category, Course
 
 from .guides import INFORMAL_EMAIL
 from .models import Slot, WritingAnswer, WritingSubmission, WritingTask, WritingTest, count_words
-from .support import TRAVEL_CONTEXT, TRAVEL_EMAIL, TRAVEL_INSTRUCTION, make_test, make_writing_course
+from .support import (
+    DISCUSSION_TASK, TRAVEL_CONTEXT, TRAVEL_EMAIL, TRAVEL_INSTRUCTION, make_test, make_writing_course,
+)
 
 PASSWORD = 'StrongPass123!'
 
@@ -23,6 +26,37 @@ class CountWordsTests(SimpleTestCase):
         self.assertEqual(count_words('Begin start'), 2)
         self.assertEqual(count_words("I don't like e-mail   at\nall.\tReally"), 7)
         self.assertEqual(count_words('Salom dunyo — bu test'), 5)
+
+
+class PartTwoStatementTests(SimpleTestCase):
+    def statement(self, text, slot=Slot.PART_2):
+        return WritingTask(slot=slot, instruction=text).statement
+
+    def test_a_closing_words_sentence_is_left_out_of_the_bold_text(self):
+        cases = {
+            'Post your response. Write 180–200 words.': 'Post your response.',
+            'Post your response.\nWrite 180–200 words.': 'Post your response.',
+            'Post your response.\n\n  Write 180–200 words.  ': 'Post your response.',
+            'Post your response. Write 180-200 words': 'Post your response.',
+            'Post your response. Write 180 — 200 words.': 'Post your response.',
+            'Post your response. Write about 200 words.': 'Post your response.',
+            'Post your response. WRITE 180–200 WORDS.': 'Post your response.',
+            'Write 180–200 words.': '',
+        }
+        for text, expected in cases.items():
+            self.assertEqual(self.statement(text), expected, text)
+
+    def test_other_text_is_left_alone(self):
+        for text in (
+            'Post your response.', '  Post your response.  ', 'Please write 180–200 words about your trip. Thanks',
+            'Write 180–200 words about your trip.', 'Do you agree? Write at least 180 words.',
+        ):
+            self.assertEqual(self.statement(text), text.strip(), text)
+
+    def test_the_letter_tasks_keep_their_whole_text(self):
+        text = 'Write a short email. Write about 50 words.'
+        self.assertEqual(self.statement(text, Slot.TASK_11), text)
+        self.assertEqual(self.statement(text, Slot.TASK_12), text)
 
 
 class ModelTests(TestCase):
@@ -54,6 +88,18 @@ class ModelTests(TestCase):
         self.assertEqual([len(group['phrases']) for group in INFORMAL_EMAIL], [3] * 6)
         self.assertEqual([group['title'] for group in INFORMAL_EMAIL],
                          ['Topic', 'About', 'Feelings', 'Problem', 'Suggestions', 'Ending'])
+
+    def test_part_two_is_a_single_task_text_and_the_others_answer_a_letter(self):
+        task_11, task_12, part_2 = self.test.tasks.all()
+        self.assertEqual((task_11.has_letter, task_12.has_letter, part_2.has_letter), (True, True, False))
+        self.assertEqual(part_2.statement, DISCUSSION_TASK)
+        self.assertEqual(part_2.words_line, 'Write 180–200 words.')
+        self.assertEqual((task_11.words_line, task_12.words_line), ('', ''))
+        self.assertEqual(task_11.statement, TRAVEL_INSTRUCTION)  # "Write about 50 words." stays in the text
+
+    def test_only_the_letter_tasks_have_a_sample_answer(self):
+        WritingTask.objects.filter(test=self.test).update(sample_answer='A sample')
+        self.assertEqual([task.sample for task in self.test.tasks.all()], ['A sample', 'A sample', ''])
 
     def test_a_test_is_ready_when_a_task_has_its_instruction(self):
         empty = WritingTest.objects.create(course=self.course, title='Empty', date=date(2025, 11, 1))
@@ -134,6 +180,16 @@ class HubTests(TestCase):
         response = self.client.get(self.url)
         self.assertNotContains(response, 'Paid')
         self.assertNotContains(response, 'Free')
+
+    def test_the_number_of_queries_does_not_grow_with_the_number_of_tests(self):
+        self.client.force_login(self.student)
+        with CaptureQueriesContext(connection) as few:
+            self.client.get(self.url)
+        for index in range(6):
+            make_test(self.course, title=f'Extra {index}', when=date(2025, 12, index + 1))
+        with CaptureQueriesContext(connection) as many:
+            self.client.get(self.url)
+        self.assertEqual(len(few), len(many))
 
     def test_an_empty_course_still_shows_the_page(self):
         WritingTest.objects.all().delete()
@@ -271,7 +327,9 @@ class WritePageTests(TestCase):
         self.assertContains(response, 'target about 50 words')
         self.assertContains(response, 'target 120–150 words')
         self.assertContains(response, 'target 180–200 words')
-        self.assertContains(response, 'data-goal="50" data-low="45" data-high="60"')
+        self.assertRegex(response.content.decode(), r'data-goal="50"\s+data-low="45"\s+data-high="60"')
+        self.assertRegex(response.content.decode(), r'data-goal="150"\s+data-low="120"\s+data-high="150"')
+        self.assertRegex(response.content.decode(), r'data-goal="200"\s+data-low="180"\s+data-high="200"')
 
     def test_only_the_first_task_is_open_and_navigation_starts_at_the_beginning(self):
         html = self.client.get(self.url).content.decode()
@@ -293,16 +351,69 @@ class WritePageTests(TestCase):
         self.assertContains(response, 'Men xozirgina ____ dan ____ xaqida e-mail oldim.')
         self.assertContains(response, '<span class="phrase-en">I am not really happy about this change as it may cause some inconvenience.</span>')
 
-    def test_the_phrases_are_not_offered_for_the_other_tasks_and_a_sample_only_when_given(self):
+    def panels(self):
         html = self.client.get(self.url).content.decode()
         panels = re.split(r'<section class="wt-card" data-panel="', html)[1:]
         self.assertEqual(len(panels), 3)
+        return panels
+
+    def test_the_phrases_are_not_offered_for_the_other_tasks(self):
+        panels = self.panels()
         self.assertIn('useful phrases', panels[0])
         self.assertNotIn('useful phrases', panels[1])
         self.assertNotIn('useful phrases', panels[2])
+
+    def test_a_sample_answer_shows_only_when_the_admin_gave_one(self):
+        WritingTask.objects.filter(test=self.test, slot=2).update(
+            sample_answer='Dear Sir,\n\nI am writing to complain.')
+        panels = self.panels()
         self.assertNotIn('Sample answer', panels[0])
-        self.assertIn('<strong>Sample answer</strong> · try your own first</summary>', panels[2])
-        self.assertIn('In my opinion a vegetarian diet can be healthy.<br><br>However, ...', panels[2])
+        self.assertIn('<strong>Sample answer</strong> · try your own first</summary>', panels[1])
+        self.assertIn('Dear Sir,<br><br>I am writing to complain.', panels[1])
+
+    def test_part_two_is_one_bold_task_text_with_its_words_line_below(self):
+        part_two = self.panels()[2]
+        self.assertIn('Part 2 <small>· Travel Club · 18 Oct 2025 · 1-smena</small>', part_two)
+        self.assertIn(f'<p class="wt-instruction">{DISCUSSION_TASK}</p>', part_two)
+        self.assertIn('<p class="wt-words-line">Write 180–200 words.</p>', part_two)
+        self.assertLess(part_two.index('wt-instruction'), part_two.index('wt-words-line'))
+        self.assertLess(part_two.index('wt-words-line'), part_two.index('<textarea'))
+        for absent in ('wt-prompt', 'wt-context', 'Sample answer', 'useful phrases'):
+            self.assertNotIn(absent, part_two)
+
+    def test_part_two_never_shows_a_letter_or_a_sample_even_when_an_old_one_is_stored(self):
+        WritingTask.objects.filter(test=self.test, slot=3).update(
+            context='Old context', prompt='Old letter', sample_answer='Old sample')
+        part_two = self.panels()[2]
+        for old in ('Old context', 'Old letter', 'Old sample', 'wt-prompt', 'Sample answer'):
+            self.assertNotIn(old, part_two)
+        self.assertIn(DISCUSSION_TASK, part_two)
+
+    def test_a_words_sentence_the_admin_typed_at_the_end_is_not_repeated(self):
+        for ending in (' Write 180–200 words.', '\nWrite 180-200 words.', ' Write about 200 words', ' write 180–200 WORDS.'):
+            WritingTask.objects.filter(test=self.test, slot=3).update(instruction=DISCUSSION_TASK + ending)
+            part_two = self.panels()[2]
+            self.assertIn(f'<p class="wt-instruction">{DISCUSSION_TASK}</p>', part_two, ending)
+            self.assertEqual(part_two.lower().count('write '), 1, ending)
+            self.assertIn('<p class="wt-words-line">Write 180–200 words.</p>', part_two, ending)
+
+    def test_part_two_with_only_the_words_sentence_shows_just_the_line(self):
+        WritingTask.objects.filter(test=self.test, slot=3).update(instruction='Write 180–200 words.')
+        part_two = self.panels()[2]
+        self.assertNotIn('class="wt-instruction"', part_two)
+        self.assertIn('<p class="wt-words-line">Write 180–200 words.</p>', part_two)
+
+    def test_the_task_text_of_part_two_is_escaped_and_keeps_its_line_breaks(self):
+        WritingTask.objects.filter(test=self.test, slot=3).update(instruction='Is <b>this</b> fine?\nExplain.')
+        part_two = self.panels()[2]
+        self.assertIn('Is &lt;b&gt;this&lt;/b&gt; fine?<br>Explain.', part_two)
+        self.assertNotIn('<b>this</b>', part_two)
+
+    def test_tasks_one_one_and_one_two_keep_their_words_inside_the_bold_text(self):
+        panels = self.panels()
+        self.assertIn('Write about 50 words.</p>', panels[0])
+        self.assertNotIn('wt-words-line', panels[0])
+        self.assertNotIn('wt-words-line', panels[1])
 
     def test_send_button_and_the_hidden_confirmation_card(self):
         response = self.client.get(self.url)
@@ -360,7 +471,7 @@ class SendTests(TestCase):
         self.assertEqual((submission.user, submission.test, submission.seconds_used), (self.student, self.test, 754))
         answers = {a.slot: a for a in submission.answers.all()}
         self.assertEqual(answers[1].text, 'Dear friend,\nI would like to visit Rome in May.')
-        self.assertEqual((answers[1].word_count, answers[2].word_count, answers[3].word_count), (9, 0, 4))
+        self.assertEqual((answers[1].word_count, answers[2].word_count, answers[3].word_count), (10, 0, 4))
         self.assertEqual(answers[2].text, '')
 
     def test_the_sent_page_shows_a_copy_and_reloading_it_does_not_send_again(self):
@@ -376,7 +487,8 @@ class SendTests(TestCase):
 
     def test_sending_nothing_stores_nothing(self):
         response = self.post(answer_1='   ', answer_2='', answer_3='\n')
-        self.assertRedirects(response, reverse('writing:intro', args=[self.course.slug, self.test.pk]))
+        self.assertRedirects(
+            response, reverse('writing:intro', args=[self.course.slug, self.test.pk]), fetch_redirect_response=False)
         self.assertEqual(WritingSubmission.objects.count(), 0)
         self.assertContains(self.client.get(response['Location']), 'Nothing was sent: you did not write anything.')
 
@@ -395,8 +507,12 @@ class SendTests(TestCase):
     def test_very_long_texts_are_cut(self):
         self.post(answer_1='word ' * 3000)
         answer = WritingAnswer.objects.get(slot=1)
-        self.assertEqual(len(answer.text), 8000 - 1)  # 8000 characters, then trailing space stripped
+        self.assertEqual(len(answer.text), 8000 - 1)  # cut at 8000 characters, then the trailing space is dropped
         self.assertEqual(answer.word_count, 1600)
+
+    def test_line_breaks_are_stored_as_one_character(self):
+        self.post(answer_1='First line\r\nSecond line\r\n\r\nThird')
+        self.assertEqual(WritingAnswer.objects.get(slot=1).text, 'First line\nSecond line\n\nThird')
 
     def test_sending_twice_keeps_both_and_the_hub_marks_the_test(self):
         self.post(answer_1='First try')

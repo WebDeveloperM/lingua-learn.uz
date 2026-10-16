@@ -9,6 +9,8 @@ from courses.models import Course
 from . import guides
 
 WORD_RE = re.compile(r'\S+')
+# A closing "Write 180–200 words." sentence of a task text (Part 2 shows that line on its own, so it is not repeated).
+TRAILING_WORDS = re.compile(r'(?:^|\s)write\s+(?:about\s+|around\s+)?\d+(?:\s*[-–—]\s*\d+)?\s+words\.?\s*$', re.IGNORECASE)
 
 
 def count_words(text):
@@ -23,16 +25,20 @@ class Slot(models.IntegerChoices):
 
 
 # What the exam asks of each task (the same in every test): what to write, the word target shown to the student,
-# the goal the progress bar fills up to, and the range of words that counts as "about right".
+# the goal the progress bar fills up to, and the range of words that counts as "about right". `letter` tells whether
+# the task answers a letter shown above the writing box (Tasks 1.1 and 1.2) or is a single task text (Part 2).
 TASK_RULES = {
     Slot.TASK_11: {
-        'label': 'Task 1.1', 'about': 'informal e-mail to a friend', 'target': 'about 50', 'goal': 50, 'low': 45, 'high': 60,
+        'label': 'Task 1.1', 'about': 'informal e-mail to a friend', 'target': 'about 50', 'goal': 50, 'low': 45,
+        'high': 60, 'letter': True,
     },
     Slot.TASK_12: {
-        'label': 'Task 1.2', 'about': 'formal e-mail', 'target': '120–150', 'goal': 150, 'low': 120, 'high': 150,
+        'label': 'Task 1.2', 'about': 'formal e-mail', 'target': '120–150', 'goal': 150, 'low': 120,
+        'high': 150, 'letter': True,
     },
     Slot.PART_2: {
-        'label': 'Part 2', 'about': 'online discussion (essay)', 'target': '180–200', 'goal': 200, 'low': 180, 'high': 200,
+        'label': 'Part 2', 'about': 'online discussion (essay)', 'target': '180–200', 'goal': 200, 'low': 180,
+        'high': 200, 'letter': False,
     },
 }
 # Useful phrases are only written down for the tasks whose structure is known.
@@ -110,6 +116,25 @@ class WritingTask(models.Model):
     @property
     def phrases(self):
         return PHRASES.get(self.slot)
+
+    @property
+    def has_letter(self):
+        """Tasks 1.1 and 1.2 answer a letter (small context + text) and may have a sample answer; Part 2 has neither."""
+        return self.rules['letter']
+
+    @property
+    def statement(self):
+        """The task text the student reads in bold. Part 2 shows "Write 180–200 words." as a line of its own below it."""
+        text = self.instruction.strip()
+        return text if self.has_letter else TRAILING_WORDS.sub('', text).strip()
+
+    @property
+    def words_line(self):
+        return '' if self.has_letter else f"Write {self.rules['target']} words."
+
+    @property
+    def sample(self):
+        return self.sample_answer if self.has_letter else ''
 
 
 class WritingSubmission(models.Model):

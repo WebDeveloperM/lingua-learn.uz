@@ -9,7 +9,7 @@
             <a class="pill-btn" href="{{ course.get_absolute_url }}">← {{ course.get_category_display }} practice</a>
             <h1 class="exercise-title">{{ test.title }} <small class="wt-title-meta">· {{ test.date|date:"j M Y" }} · {{ test.get_shift_display }}</small></h1>
 
-            <section class="ready-card">
+            <section class="ready-card wt-sent-top">
                 <h2>✅ Sent to your teacher</h2>
                 <p class="ready-meta">{{ submission.sent_at|date:"j M Y, H:i" }} · {{ submission.total_words }} word{{ submission.total_words|pluralize }} in total{% if submission.time_used %} · Time used: {{ submission.time_used }}{% endif %}</p>
                 <p>Your teacher will check your writing. Here is a copy of what you sent.</p>

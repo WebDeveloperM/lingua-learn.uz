@@ -35,13 +35,20 @@
                     <section class="wt-card" data-panel="{{ task.slot }}"{% if not forloop.first %} hidden{% endif %}>
                         <h2 class="wt-card-title">{{ task.label }} <small>· {{ test.title }} · {{ test.date|date:"j M Y" }} · {{ test.get_shift_display }}</small></h2>
 
-                        {% if task.context or task.prompt %}
-                        <div class="wt-prompt">
-                            {% if task.context %}<p class="wt-context">{{ task.context }}</p>{% endif %}
-                            {% if task.prompt %}<p class="wt-text">{{ task.prompt|linebreaksbr }}</p>{% endif %}
-                        </div>
+                        {% if task.has_letter %}
+                            {% if task.context or task.prompt %}
+                            <div class="wt-prompt">
+                                {% if task.context %}<p class="wt-context">{{ task.context }}</p>{% endif %}
+                                {% if task.prompt %}<p class="wt-text">{{ task.prompt|linebreaksbr }}</p>{% endif %}
+                            </div>
+                            {% endif %}
+                            <p class="wt-instruction">{{ task.instruction|linebreaksbr }}</p>
+                        {% else %}
+                            <div class="wt-task-text">
+                                {% if task.statement %}<p class="wt-instruction">{{ task.statement|linebreaksbr }}</p>{% endif %}
+                                <p class="wt-words-line">{{ task.words_line }}</p>
+                            </div>
                         {% endif %}
-                        <p class="wt-instruction">{{ task.instruction|linebreaksbr }}</p>
 
                         <textarea class="wt-input" name="answer_{{ task.slot }}" rows="9" maxlength="8000"
                                   placeholder="Start writing here..." aria-label="{{ task.label }} — your answer"
@@ -61,10 +68,10 @@
                             {% include "writing/_phrases.html" with groups=task.phrases interactive=True %}
                         </details>
                         {% endif %}
-                        {% if task.sample_answer %}
+                        {% if task.sample %}
                         <details class="wt-fold">
                             <summary><span aria-hidden="true">👀</span> <strong>Sample answer</strong> · try your own first</summary>
-                            <div class="wt-sample">{{ task.sample_answer|linebreaksbr }}</div>
+                            <div class="wt-sample">{{ task.sample|linebreaksbr }}</div>
                         </details>
                         {% endif %}
                     </section>
