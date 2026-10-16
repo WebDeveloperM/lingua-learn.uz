@@ -66,9 +66,10 @@ def part(request, slug, part):
     for speaking_set in sets:
         speaking_set.question_list = list(speaking_set.questions.all())
         speaking_set.is_practised = speaking_set.pk in practised
+    size = max((len(speaking_set.question_list) for speaking_set in sets), default=DEFAULT_QUESTIONS)
     return render(request, 'speaking/part.html', {
         'course': course,
-        'part': part_info(part),
+        'part': part_info(part, size),
         'sets': sets,
     })
 

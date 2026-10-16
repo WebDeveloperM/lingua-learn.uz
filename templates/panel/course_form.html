@@ -46,6 +46,23 @@
                 <p class="empty-note">Hali test yo'q. «Test qo'shish» tugmasini bosing.</p>
                 {% endfor %}
             </section>
+            {% elif course and course.category == 'speaking' %}
+            <section class="panel-card" id="practice">
+                <header class="card-head"><h2>Speaking partlar</h2></header>
+                <p class="muted-sm" style="margin-top:-6px;">
+                    Speaking 4 ta partdan iborat. Har bir partga o'quvchi mashq qiladigan setlar (savollar to'plami) kiritiladi.
+                    Bu sahifadagi o'zgarishlarni avval «Saqlash» bilan saqlang, so'ng partlarga o'ting.
+                </p>
+                {% for part in speaking_parts %}
+                <div class="part-row">
+                    <div>
+                        <strong>{{ part.icon }} {{ part.label }}</strong>
+                        <div class="muted-sm">{{ part.tagline }} · {{ part.sets_count }} ta set · {{ part.questions_count }} ta savol</div>
+                    </div>
+                    <a class="btn btn-ghost btn-xs" href="{% url 'panel:speaking_part' course.pk part.number %}">Boshqarish</a>
+                </div>
+                {% endfor %}
+            </section>
             {% else %}
             <section class="panel-card" id="practice">
                 <header class="card-head">

@@ -8,7 +8,7 @@ from courses.models import Category, Course
 from speaking.models import SpeakingPart, SpeakingSet, part_info, set_name
 
 from .decorators import admin_required
-from .speaking_forms import SetFormSet, save_sets, questions_text
+from .speaking_forms import SetFormSet, questions_text, save_sets
 
 
 def speaking_part_rows(course):

@@ -323,3 +323,26 @@ Har bir test — haqiqiy imtihon: **Task 1.1**, **Task 1.2** va **Part 2**, jami
 - **Yuborilgan ishlar** — o'quvchilar yuborgan ishlar (so'zlar soni va yozish vaqti bilan), ishni ochganda har
   topshiriq matni topshirig'i bilan birga ko'rinadi. Hozircha o'qituvchi izohi (feedback) yozish yo'q.
 - Testni o'chirsangiz, uning topshiriqlari va o'quvchilar yuborgan ishlar ham o'chadi.
+
+## Speaking (partlar va setlar)
+
+**Speaking** kursining kartochkasi **Speaking practice** sahifasini ochadi (`speaking/` ilovasi):
+
+1. **Speaking practice** — «📊 How you are scored · Baholash tartibi» kartochkasi (Grammar, Vocabulary, Fluency,
+   Pronunciation — har biri 25%) va 4 ta part: 💬 Part 1.1 (Questions about you), 🖼️ Part 1.2 (Talk about two pictures),
+   🧭 Part 2 (Three questions, one long answer), ⚖️ Part 3 (Discuss both sides of a topic). Har bir kartochkada vaqt
+   qatori («3 questions · 5 sec to think · 30 sec to talk») va «✓ 1 / 3 practised» belgisi bor. Free / Full access
+   belgilari yo'q.
+2. Partni bosganda **Practice questions** ochiladi: Set One, Set Two... — har setda raqamlangan savollar (har
+   savol yonidagi 🔊 tugmasi uni brauzer ovozi bilan ingliz tilida o'qib beradi; brauzer ovoz chiqara olmasa, tugma
+   ko'rinmaydi) va **🎙️ Practise this** tugmasi (mashq qilingan setda «Practise this again ✓»).
+3. **Practise this** → **Ready? 🎙️** sahifasi (kirish talab qilinadi): «3 questions · about 2 minutes»
+   (vaqt partning taymerlaridan hisoblanadi), qoidalar, «Read the questions aloud» (tanlov brauzerda eslab
+   qolinadi) va **▶ Start**. Hozircha Start o'chirilgan: mashqning o'zi (taymer, gapirish) keyingi bosqichda
+   qo'shiladi. «Mashq qilingan» belgilari ham shunda (`SpeakingPractice`) yoziladi.
+
+**Admin paneldan:** `/panel/courses/` → Speaking kursini **Tahrirlash** → **Speaking partlar** → part yonidagi
+**Boshqarish**. Har set uchun savollarni har qatorga bittadan yozing (odatda 3 ta, ko'pi bilan 12 ta). Yangi set
+qo'shish uchun pastdagi bo'sh «Yangi set» maydonini to'ldiring: raqami o'zi qo'yiladi (Set One, Set Two...).
+«Setni o'chirish» belgilanib saqlansa, set o'chadi; savollari butunlay o'chirilgan set qoladi, lekin o'quvchiga
+ko'rinmaydi. Partlarning nomi, tavsifi va vaqt qatorlari kodda (`speaking/models.py`, `PART_RULES`).

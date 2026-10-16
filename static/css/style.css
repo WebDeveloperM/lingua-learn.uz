@@ -1128,7 +1128,7 @@ button.phrase:hover, button.phrase:focus-visible { background: #dff3e8; outline:
 .sp-part {
     display: flex;
     flex: 1;
-    align-items: center;
+    align-items: stretch;
     gap: 16px;
     padding: 16px 18px;
     background: #fdfffd;
@@ -1141,7 +1141,7 @@ button.phrase:hover, button.phrase:focus-visible { background: #dff3e8; outline:
 }
 .sp-part:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(23, 59, 42, .22); }
 .sp-part:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
-.sp-part-icon { flex-shrink: 0; font-size: 40px; line-height: 1; }
+.sp-part-icon { flex-shrink: 0; align-self: center; font-size: 40px; line-height: 1; }
 .sp-part-body { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .sp-part-name { font-size: 18px; font-weight: 700; color: var(--ink); }
 .sp-part-tagline { font-size: 13.5px; color: var(--ink-muted); }
